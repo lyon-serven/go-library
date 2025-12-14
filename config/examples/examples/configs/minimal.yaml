@@ -1,0 +1,7 @@
+app:
+  name: "MinimalApp"
+  environment: "production"
+
+database:
+  host: "prod-db.example.com"
+  username: "prod_user"

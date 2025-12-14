@@ -1,0 +1,9 @@
+app:
+  name: "ProfileApp"
+  version: "1.0.0-dev"
+  debug: true
+
+database:
+  host: "dev-db.local"
+  port: 5432
+  max_open_conns: 5

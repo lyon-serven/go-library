@@ -1,0 +1,7 @@
+
+type: "redis"
+servers:
+  - "cache1.local:6379"
+  - "cache2.local:6379"
+options:
+  max_retries: 3

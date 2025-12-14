@@ -1,0 +1,8 @@
+host: saved-db.local
+port: 5432
+username: saved_user
+password: saved_password
+database: saved_db
+max_open_conns: 20
+max_idle_conns: 10
+timeout: 30s

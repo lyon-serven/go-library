@@ -1,0 +1,9 @@
+app:
+  name: ""  # Invalid: empty name
+  version: "1.0.0"
+  environment: ""  # Invalid: empty environment
+
+database:
+  host: ""  # Invalid: empty host
+  port: -1  # Invalid: negative port
+  username: ""  # Invalid: empty username

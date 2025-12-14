@@ -1,0 +1,4 @@
+
+host: "manager-db.local"
+port: 5432
+username: "manager_user"

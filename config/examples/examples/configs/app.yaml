@@ -1,0 +1,47 @@
+app:
+  name: "MyApplication"
+  version: "1.0.0"
+  environment: "development"
+  debug: true
+
+database:
+  host: "localhost"
+  port: 5432
+  username: "admin"
+  password: "password123"
+  database: "myapp"
+  max_open_conns: 10
+  max_idle_conns: 5
+  timeout: "30s"
+
+server:
+  address: "0.0.0.0"
+  port: 8080
+  tls:
+    enabled: false
+    cert_file: ""
+    key_file: ""
+  timeouts:
+    read: "10s"
+    write: "10s"
+    idle: "60s"
+  rate_limit:
+    enabled: true
+    rps: 1000
+    burst: 100
+
+logging:
+  level: "info"
+  format: "json"
+  output: "stdout"
+  max_size: 100
+  max_backups: 3
+  max_age: 28
+
+features:
+  enable_metrics: true
+  enable_tracing: false
+  enable_debug: true
+  new_features:
+    feature_a: true
+    feature_b: false

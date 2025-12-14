@@ -1,0 +1,4 @@
+app:
+  name: "WatchApp"
+  version: "1.0.0"
+  counter: 3
