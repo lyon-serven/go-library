@@ -2,7 +2,39 @@
 
 MyLib 是一个功能完备、设计精良的 Go 工具库，提供了从基础工具到企业级缓存、配置管理的全套解决方案。采用模块化设计，支持依赖注入，满足不同规模应用的需求。
 
-## 🚀 核心特性
+## � 安装
+
+**注意**: 发布到仓库前，请先按照 [快速开始.md](./快速开始.md) 或 [发布演示.md](./发布演示.md) 完成模块配置。
+
+### 发布后使用
+
+```bash
+# 安装最新版本
+go get github.com/yourname/mylib@latest
+
+# 安装指定版本
+go get github.com/yourname/mylib@v1.0.0
+```
+
+### 发布前准备
+
+如果您是项目维护者，准备发布此库，请：
+
+1. 运行配置脚本更新模块路径:
+   ```powershell
+   .\update-module-path.ps1 -RepoURL "github.com/yourname/mylib"
+   ```
+
+2. 推送到仓库并创建版本标签:
+   ```bash
+   git push origin main
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+
+3. 详细步骤请查看: [快速开始.md](./快速开始.md)
+
+## �🚀 核心特性
 
 - **🎯 企业级架构**: 基于依赖注入的模块化设计
 - **⚡ 高性能实现**: 针对 Go 语言特性优化
