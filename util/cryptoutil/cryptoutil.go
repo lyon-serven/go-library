@@ -5,6 +5,7 @@ import (
 	"crypto"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/des"
 	"crypto/hmac"
 	"crypto/md5"
 	"crypto/rand"
@@ -308,6 +309,297 @@ func PKCS7Unpad(data []byte) ([]byte, error) {
 	}
 
 	return data[:len(data)-padding], nil
+}
+
+// DESEncrypt encrypts data using DES with the given key (8 bytes)
+func DESEncrypt(data, key []byte) ([]byte, error) {
+	if len(key) != 8 {
+		return nil, errors.New("DES key must be 8 bytes")
+	}
+
+	block, err := des.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate a random IV
+	iv := make([]byte, des.BlockSize)
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return nil, err
+	}
+
+	// Encrypt using CBC mode
+	mode := cipher.NewCBCEncrypter(block, iv)
+
+	// Pad the data to be multiple of block size
+	paddedData := PKCS7Pad(data, des.BlockSize)
+
+	encrypted := make([]byte, len(paddedData))
+	mode.CryptBlocks(encrypted, paddedData)
+
+	// Prepend IV to encrypted data
+	result := make([]byte, len(iv)+len(encrypted))
+	copy(result[:len(iv)], iv)
+	copy(result[len(iv):], encrypted)
+
+	return result, nil
+}
+
+// DESDecrypt decrypts data using DES with the given key (8 bytes)
+func DESDecrypt(encryptedData, key []byte) ([]byte, error) {
+	if len(key) != 8 {
+		return nil, errors.New("DES key must be 8 bytes")
+	}
+
+	if len(encryptedData) < des.BlockSize {
+		return nil, errors.New("encrypted data too short")
+	}
+
+	block, err := des.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract IV from the beginning
+	iv := encryptedData[:des.BlockSize]
+	encrypted := encryptedData[des.BlockSize:]
+
+	if len(encrypted)%des.BlockSize != 0 {
+		return nil, errors.New("encrypted data is not a multiple of block size")
+	}
+
+	// Decrypt using CBC mode
+	mode := cipher.NewCBCDecrypter(block, iv)
+	decrypted := make([]byte, len(encrypted))
+	mode.CryptBlocks(decrypted, encrypted)
+
+	// Remove padding
+	return PKCS7Unpad(decrypted)
+}
+
+// DESEncryptString encrypts string using DES
+func DESEncryptString(data, key string) (string, error) {
+	if len(key) != 8 {
+		return "", errors.New("DES key must be 8 characters")
+	}
+
+	encrypted, err := DESEncrypt([]byte(data), []byte(key))
+	if err != nil {
+		return "", err
+	}
+	return Base64Encode(encrypted), nil
+}
+
+// DESDecryptString decrypts base64 encoded string using DES
+func DESDecryptString(encryptedData, key string) (string, error) {
+	if len(key) != 8 {
+		return "", errors.New("DES key must be 8 characters")
+	}
+
+	encrypted, err := Base64Decode(encryptedData)
+	if err != nil {
+		return "", err
+	}
+
+	decrypted, err := DESDecrypt(encrypted, []byte(key))
+	if err != nil {
+		return "", err
+	}
+
+	return string(decrypted), nil
+}
+
+// DESEncryptWithFixedIV encrypts data using DES with fixed IV (key as IV) - compatible mode
+func DESEncryptWithFixedIV(data, key []byte) ([]byte, error) {
+	if len(key) != 8 {
+		return nil, errors.New("DES key must be 8 bytes")
+	}
+
+	block, err := des.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	// Use key as IV (fixed IV mode)
+	iv := key
+
+	// Encrypt using CBC mode
+	mode := cipher.NewCBCEncrypter(block, iv)
+
+	// Pad the data to be multiple of block size (PKCS5 is same as PKCS7 for 8-byte blocks)
+	paddedData := PKCS7Pad(data, des.BlockSize)
+
+	encrypted := make([]byte, len(paddedData))
+	mode.CryptBlocks(encrypted, paddedData)
+
+	return encrypted, nil
+}
+
+// DESDecryptWithFixedIV decrypts data using DES with fixed IV (key as IV) - compatible mode
+func DESDecryptWithFixedIV(encryptedData, key []byte) ([]byte, error) {
+	if len(key) != 8 {
+		return nil, errors.New("DES key must be 8 bytes")
+	}
+
+	if len(encryptedData)%des.BlockSize != 0 {
+		return nil, errors.New("encrypted data is not a multiple of block size")
+	}
+
+	block, err := des.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	// Use key as IV (fixed IV mode)
+	iv := key
+
+	// Decrypt using CBC mode
+	mode := cipher.NewCBCDecrypter(block, iv)
+	decrypted := make([]byte, len(encryptedData))
+	mode.CryptBlocks(decrypted, encryptedData)
+
+	// Remove padding
+	return PKCS7Unpad(decrypted)
+}
+
+// DESEncryptHex encrypts string using DES with fixed IV and returns hex string - compatible with your code
+func DESEncryptHex(data, key string) (string, error) {
+	if len(data) == 0 {
+		return "", nil
+	}
+
+	if len(key) != 8 {
+		return "", errors.New("DES key must be 8 characters")
+	}
+
+	encrypted, err := DESEncryptWithFixedIV([]byte(data), []byte(key))
+	if err != nil {
+		return "", err
+	}
+
+	return HexEncode(encrypted), nil
+}
+
+// DESDecryptHex decrypts hex encoded string using DES with fixed IV - compatible with your code
+func DESDecryptHex(encryptedHex, key string) (string, error) {
+	if len(encryptedHex) == 0 {
+		return "", nil
+	}
+
+	if len(key) != 8 {
+		return "", errors.New("DES key must be 8 characters")
+	}
+
+	// Decode hex string to bytes
+	encrypted, err := HexDecode(encryptedHex)
+	if err != nil {
+		return "", err
+	}
+
+	decrypted, err := DESDecryptWithFixedIV(encrypted, []byte(key))
+	if err != nil {
+		return "", err
+	}
+
+	return string(decrypted), nil
+}
+
+// TripleDESEncrypt encrypts data using 3DES with the given key (24 bytes)
+func TripleDESEncrypt(data, key []byte) ([]byte, error) {
+	if len(key) != 24 {
+		return nil, errors.New("3DES key must be 24 bytes")
+	}
+
+	block, err := des.NewTripleDESCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate a random IV
+	iv := make([]byte, des.BlockSize)
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return nil, err
+	}
+
+	// Encrypt using CBC mode
+	mode := cipher.NewCBCEncrypter(block, iv)
+
+	// Pad the data to be multiple of block size
+	paddedData := PKCS7Pad(data, des.BlockSize)
+
+	encrypted := make([]byte, len(paddedData))
+	mode.CryptBlocks(encrypted, paddedData)
+
+	// Prepend IV to encrypted data
+	result := make([]byte, len(iv)+len(encrypted))
+	copy(result[:len(iv)], iv)
+	copy(result[len(iv):], encrypted)
+
+	return result, nil
+}
+
+// TripleDESDecrypt decrypts data using 3DES with the given key (24 bytes)
+func TripleDESDecrypt(encryptedData, key []byte) ([]byte, error) {
+	if len(key) != 24 {
+		return nil, errors.New("3DES key must be 24 bytes")
+	}
+
+	if len(encryptedData) < des.BlockSize {
+		return nil, errors.New("encrypted data too short")
+	}
+
+	block, err := des.NewTripleDESCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract IV from the beginning
+	iv := encryptedData[:des.BlockSize]
+	encrypted := encryptedData[des.BlockSize:]
+
+	if len(encrypted)%des.BlockSize != 0 {
+		return nil, errors.New("encrypted data is not a multiple of block size")
+	}
+
+	// Decrypt using CBC mode
+	mode := cipher.NewCBCDecrypter(block, iv)
+	decrypted := make([]byte, len(encrypted))
+	mode.CryptBlocks(decrypted, encrypted)
+
+	// Remove padding
+	return PKCS7Unpad(decrypted)
+}
+
+// TripleDESEncryptString encrypts string using 3DES
+func TripleDESEncryptString(data, key string) (string, error) {
+	if len(key) != 24 {
+		return "", errors.New("3DES key must be 24 characters")
+	}
+
+	encrypted, err := TripleDESEncrypt([]byte(data), []byte(key))
+	if err != nil {
+		return "", err
+	}
+	return Base64Encode(encrypted), nil
+}
+
+// TripleDESDecryptString decrypts base64 encoded string using 3DES
+func TripleDESDecryptString(encryptedData, key string) (string, error) {
+	if len(key) != 24 {
+		return "", errors.New("3DES key must be 24 characters")
+	}
+
+	encrypted, err := Base64Decode(encryptedData)
+	if err != nil {
+		return "", err
+	}
+
+	decrypted, err := TripleDESDecrypt(encrypted, []byte(key))
+	if err != nil {
+		return "", err
+	}
+
+	return string(decrypted), nil
 }
 
 // RSAKeyPair represents an RSA key pair
