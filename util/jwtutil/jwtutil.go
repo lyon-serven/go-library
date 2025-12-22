@@ -4,6 +4,7 @@ package jwtutil
 import (
 	"crypto/hmac"
 	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -28,6 +29,12 @@ const (
 	HS256 = "HS256"
 	HS384 = "HS384"
 	HS512 = "HS512"
+)
+
+// Configuration constants
+const (
+	MinSecretKeyLength = 32               // 最小密钥长度(256位)
+	DefaultClockSkew   = 5 * time.Second  // 默认时钟偏移容忍度
 )
 
 // StandardClaims represents the standard JWT claims
@@ -60,6 +67,7 @@ type JWTConfig struct {
 	Issuer         string        // Default issuer
 	Audience       string        // Default audience
 	ExpiryDuration time.Duration // Default expiry duration
+	ClockSkew      time.Duration // Clock skew tolerance for time validation
 }
 
 // NewJWTConfig creates a new JWT configuration with default values
@@ -68,13 +76,25 @@ func NewJWTConfig(secretKey string) *JWTConfig {
 		SecretKey:      secretKey,
 		Algorithm:      HS256,
 		ExpiryDuration: 24 * time.Hour,
+		ClockSkew:      DefaultClockSkew,
 	}
+}
+
+// validateSecretKey validates the secret key strength
+func (c *JWTConfig) validateSecretKey() error {
+	if c.SecretKey == "" {
+		return errors.New("secret key is required")
+	}
+	if len(c.SecretKey) < MinSecretKeyLength {
+		return fmt.Errorf("secret key too short: minimum %d bytes required, got %d bytes", MinSecretKeyLength, len(c.SecretKey))
+	}
+	return nil
 }
 
 // GenerateToken generates a JWT token with the given claims
 func (c *JWTConfig) GenerateToken(claims *Claims) (string, error) {
-	if c.SecretKey == "" {
-		return "", errors.New("secret key is required")
+	if err := c.validateSecretKey(); err != nil {
+		return "", err
 	}
 
 	// Set default values
@@ -137,8 +157,8 @@ func (c *JWTConfig) GenerateTokenSimple(subject string, customClaims map[string]
 
 // VerifyToken verifies and parses a JWT token
 func (c *JWTConfig) VerifyToken(tokenString string) (*Claims, error) {
-	if c.SecretKey == "" {
-		return nil, errors.New("secret key is required")
+	if err := c.validateSecretKey(); err != nil {
+		return nil, err
 	}
 
 	// Split token into parts
@@ -182,12 +202,17 @@ func (c *JWTConfig) VerifyToken(tokenString string) (*Claims, error) {
 		return nil, fmt.Errorf("failed to unmarshal claims: %w", err)
 	}
 
-	// Validate claims
+	// Validate claims with clock skew tolerance
 	now := time.Now().Unix()
-	if claims.ExpiresAt > 0 && now > claims.ExpiresAt {
+	skew := int64(c.ClockSkew.Seconds())
+	if skew == 0 {
+		skew = int64(DefaultClockSkew.Seconds())
+	}
+	
+	if claims.ExpiresAt > 0 && now > claims.ExpiresAt+skew {
 		return nil, ErrTokenExpired
 	}
-	if claims.NotBefore > 0 && now < claims.NotBefore {
+	if claims.NotBefore > 0 && now < claims.NotBefore-skew {
 		return nil, ErrTokenNotValidYet
 	}
 
@@ -229,7 +254,10 @@ func (c *JWTConfig) RefreshToken(tokenString string) (string, error) {
 	return c.GenerateToken(claims)
 }
 
-// ParseTokenWithoutVerify parses a token without verifying the signature (use with caution)
+// ParseTokenWithoutVerify parses a token without verifying the signature
+// ⚠️ WARNING: This function is for debugging or extracting public information only.
+// NEVER use this for authentication or authorization decisions!
+// Unverified token data cannot be trusted and may be tampered with.
 func ParseTokenWithoutVerify(tokenString string) (*Claims, error) {
 	parts := strings.Split(tokenString, ".")
 	if len(parts) != 3 {
@@ -286,13 +314,13 @@ func (c *JWTConfig) sign(message string) (string, error) {
 		}
 	case HS384:
 		hasher = func() []byte {
-			h := hmac.New(sha256.New224, []byte(c.SecretKey))
+			h := hmac.New(sha512.New384, []byte(c.SecretKey))
 			h.Write([]byte(message))
 			return h.Sum(nil)
 		}
 	case HS512:
 		hasher = func() []byte {
-			h := hmac.New(sha256.New, []byte(c.SecretKey))
+			h := hmac.New(sha512.New, []byte(c.SecretKey))
 			h.Write([]byte(message))
 			return h.Sum(nil)
 		}
