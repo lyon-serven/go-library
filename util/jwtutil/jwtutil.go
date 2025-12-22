@@ -33,8 +33,8 @@ const (
 
 // Configuration constants
 const (
-	MinSecretKeyLength = 32               // 最小密钥长度(256位)
-	DefaultClockSkew   = 5 * time.Second  // 默认时钟偏移容忍度
+	MinSecretKeyLength = 32              // 最小密钥长度(256位)
+	DefaultClockSkew   = 5 * time.Second // 默认时钟偏移容忍度
 )
 
 // StandardClaims represents the standard JWT claims
@@ -208,7 +208,7 @@ func (c *JWTConfig) VerifyToken(tokenString string) (*Claims, error) {
 	if skew == 0 {
 		skew = int64(DefaultClockSkew.Seconds())
 	}
-	
+
 	if claims.ExpiresAt > 0 && now > claims.ExpiresAt+skew {
 		return nil, ErrTokenExpired
 	}
