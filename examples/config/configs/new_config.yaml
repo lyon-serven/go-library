@@ -1,0 +1,27 @@
+system:
+    app: video_server
+data:
+    database:
+        movie:
+            dsn_des: root:infini_rag_flow@(192.168.5.9:5455)/FilmSite?charset=utf8mb4&parseTime=True&loc=Local
+            conn_max_idle_time: 30s
+            conn_max_life_time: 1m0s
+            name: shop
+            log_err: true
+            log_slow: 250ms
+            metrics: true
+    redis:
+        host: 192.168.5.9
+        port: 6479
+        password: "123456"
+        db: 0
+log:
+    log_to_stdout: true
+    log_to_file: true
+    path: tqLogger
+    file_name: tqlog.log
+    rotation_time: 1h0m0s
+    file_age: 4320h0m0s
+    level: debug
+    p: "1415"
+    b: "1"

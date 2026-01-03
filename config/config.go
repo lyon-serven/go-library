@@ -4,28 +4,63 @@ package config
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
 
+	"gitee.com/wangsoft/go-library/util/cryptoutil"
+
 	"gopkg.in/yaml.v3"
 )
 
 // ConfigManager manages configuration loading and caching
 type ConfigManager struct {
-	mu      sync.RWMutex
-	configs map[string]interface{}
-	watcher *FileWatcher
+	mu            sync.RWMutex
+	configs       map[string]interface{}
+	watcher       *FileWatcher
+	enableDecrypt bool
+	priKey        string // 秘钥
 }
 
-// NewConfigManager creates a new configuration manager
-func NewConfigManager() *ConfigManager {
-	return &ConfigManager{
-		configs: make(map[string]interface{}),
-		watcher: NewFileWatcher(),
+// ConfigOption defines the option function type
+type ConfigOption func(*ConfigManager)
+
+// WithDecryption enables configuration decryption with the provided key
+func WithDecryption(priKey string) ConfigOption {
+	return func(cm *ConfigManager) {
+		cm.enableDecrypt = true
+		cm.priKey = priKey
 	}
+}
+func WithEnableDecryption() ConfigOption {
+	return func(cm *ConfigManager) {
+		cm.enableDecrypt = true
+	}
+}
+func WithDisabledWatcher() ConfigOption {
+	return func(cm *ConfigManager) {
+		cm.watcher = nil
+	}
+}
+
+// NewConfigManager creates a new configuration manager with options
+func NewConfigManager(opts ...ConfigOption) *ConfigManager {
+	cm := &ConfigManager{
+		configs:       make(map[string]interface{}),
+		watcher:       NewFileWatcher(),
+		priKey:        "Lyon123!@#",
+		enableDecrypt: false,
+	}
+
+	// Apply all options
+	for _, opt := range opts {
+		opt(cm)
+	}
+
+	return cm
 }
 
 // LoadConfig loads configuration from YAML file into the specified struct
@@ -49,10 +84,68 @@ func (cm *ConfigManager) LoadConfig(filePath string, config interface{}) error {
 		return fmt.Errorf("failed to parse YAML config: %w", err)
 	}
 
+	// Decrypt sensitive fields
+	if cm.enableDecrypt {
+		cm.decryptConfigFields(reflect.ValueOf(config))
+	}
 	// Cache the config
 	cm.configs[filePath] = config
 
 	return nil
+}
+
+// 递归解密函数
+func (cm *ConfigManager) decryptConfigFields(v reflect.Value) {
+	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			return
+		}
+		v = v.Elem()
+	}
+
+	if v.Kind() != reflect.Struct {
+		return
+	}
+
+	t := v.Type()
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldType := t.Field(i)
+
+		if !field.CanSet() {
+			continue
+		}
+		switch field.Kind() {
+		case reflect.String:
+			// 处理string类型且以Des结尾的字段
+			fieldName := fieldType.Name
+			fieldValue := field.String()
+			if strings.HasSuffix(fieldName, "Des") && fieldValue != "" {
+				decryptedValue, err := cryptoutil.DESDecryptHex(fieldValue, cm.priKey)
+				if err != nil {
+					log.Printf("字段 %s 解密失败: %v", fieldName, err)
+					continue
+				}
+				field.SetString(decryptedValue)
+			}
+		case reflect.Struct:
+			// 递归处理嵌套结构体
+			cm.decryptConfigFields(field)
+		case reflect.Ptr:
+			// 递归处理指针类型的嵌套结构体
+			if !field.IsNil() {
+				cm.decryptConfigFields(field)
+			}
+		case reflect.Slice, reflect.Array:
+			// 处理切片或数组中的结构体元素
+			for j := 0; j < field.Len(); j++ {
+				elem := field.Index(j)
+				if elem.Kind() == reflect.Struct || elem.Kind() == reflect.Ptr {
+					cm.decryptConfigFields(elem)
+				}
+			}
+		}
+	}
 }
 
 // LoadConfigFromBytes loads configuration from YAML bytes into the specified struct
