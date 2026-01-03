@@ -17,7 +17,7 @@ func main() {
 	example2_AccessAndRefreshTokens()
 
 	// 示例 3: 令牌验证和自定义检查
-	example3_TokenValidation()
+	//example3_TokenValidation()
 
 	// 示例 4: 令牌刷新
 	example4_TokenRefresh()
@@ -58,7 +58,7 @@ func example1_BasicUsage() {
 	fmt.Printf("生成的令牌: %s\n", token)
 
 	// 验证令牌
-	validatedClaims, err := config.ValidateToken(token)
+	validatedClaims, err := config.VerifyToken(token)
 	if err != nil {
 		fmt.Printf("验证令牌失败: %v\n", err)
 		return
@@ -100,7 +100,7 @@ func example2_AccessAndRefreshTokens() {
 	fmt.Printf("刷新令牌: %s\n\n", refreshToken)
 
 	// 使用访问令牌
-	validatedClaims, err := config.ValidateToken(accessToken)
+	validatedClaims, err := config.VerifyToken(accessToken)
 	if err != nil {
 		fmt.Printf("访问令牌验证失败: %v\n", err)
 	} else {
@@ -108,54 +108,54 @@ func example2_AccessAndRefreshTokens() {
 	}
 }
 
-func example3_TokenValidation() {
-	fmt.Println("--- 示例 3: 令牌验证和自定义检查 ---")
-
-	config := jwtutil.NewJWTConfig("validation-secret-key")
-	config.Issuer = "trusted-issuer"
-	config.Audience = []string{"my-api"}
-
-	claims := &jwtutil.Claims{
-		StandardClaims: jwtutil.StandardClaims{
-			Subject: "user789",
-		},
-		CustomClaims: map[string]interface{}{
-			"permissions": []string{"read", "write", "delete"},
-		},
-	}
-
-	token, _ := config.GenerateToken(claims)
-
-	// 验证令牌并进行自定义检查
-	validatedClaims, err := config.ValidateTokenWithCheck(token, func(c *jwtutil.Claims) error {
-		// 自定义验证逻辑：检查权限
-		permissions, ok := c.CustomClaims["permissions"].([]interface{})
-		if !ok || len(permissions) == 0 {
-			return fmt.Errorf("缺少权限信息")
-		}
-
-		hasWritePermission := false
-		for _, p := range permissions {
-			if p == "write" {
-				hasWritePermission = true
-				break
-			}
-		}
-
-		if !hasWritePermission {
-			return fmt.Errorf("缺少写入权限")
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		fmt.Printf("令牌验证失败: %v\n", err)
-	} else {
-		fmt.Printf("令牌验证成功！用户ID: %s\n", validatedClaims.Subject)
-		fmt.Printf("权限: %v\n\n", validatedClaims.CustomClaims["permissions"])
-	}
-}
+//func example3_TokenValidation() {
+//	fmt.Println("--- 示例 3: 令牌验证和自定义检查 ---")
+//
+//	config := jwtutil.NewJWTConfig("validation-secret-key")
+//	config.Issuer = "trusted-issuer"
+//	config.Audience = []string{"my-api"}
+//
+//	claims := &jwtutil.Claims{
+//		StandardClaims: jwtutil.StandardClaims{
+//			Subject: "user789",
+//		},
+//		CustomClaims: map[string]interface{}{
+//			"permissions": []string{"read", "write", "delete"},
+//		},
+//	}
+//
+//	token, _ := config.GenerateToken(claims)
+//
+//	// 验证令牌并进行自定义检查
+//	validatedClaims, err := config.ValidateTokenWithCheck(token, func(c *jwtutil.Claims) error {
+//		// 自定义验证逻辑：检查权限
+//		permissions, ok := c.CustomClaims["permissions"].([]interface{})
+//		if !ok || len(permissions) == 0 {
+//			return fmt.Errorf("缺少权限信息")
+//		}
+//
+//		hasWritePermission := false
+//		for _, p := range permissions {
+//			if p == "write" {
+//				hasWritePermission = true
+//				break
+//			}
+//		}
+//
+//		if !hasWritePermission {
+//			return fmt.Errorf("缺少写入权限")
+//		}
+//
+//		return nil
+//	})
+//
+//	if err != nil {
+//		fmt.Printf("令牌验证失败: %v\n", err)
+//	} else {
+//		fmt.Printf("令牌验证成功！用户ID: %s\n", validatedClaims.Subject)
+//		fmt.Printf("权限: %v\n\n", validatedClaims.CustomClaims["permissions"])
+//	}
+//}
 
 func example4_TokenRefresh() {
 	fmt.Println("--- 示例 4: 令牌刷新 ---")
@@ -189,7 +189,7 @@ func example4_TokenRefresh() {
 	fmt.Printf("新令牌: %s\n", newToken)
 
 	// 验证新令牌
-	validatedClaims, _ := config.ValidateToken(newToken)
+	validatedClaims, _ := config.VerifyToken(newToken)
 	fmt.Printf("新令牌验证成功！用户: %v\n\n", validatedClaims.CustomClaims["username"])
 }
 
@@ -213,7 +213,7 @@ func example5_ExtractTokenInfo() {
 	token, _ := config.GenerateToken(claims)
 
 	// 提取用户ID
-	userID, err := config.ExtractSubject(token)
+	userID, err := jwtutil.ExtractSubject(token)
 	if err != nil {
 		fmt.Printf("提取用户ID失败: %v\n", err)
 		return
@@ -221,7 +221,7 @@ func example5_ExtractTokenInfo() {
 	fmt.Printf("用户ID: %s\n", userID)
 
 	// 提取自定义字段
-	validatedClaims, _ := config.ValidateToken(token)
+	validatedClaims, _ := config.VerifyToken(token)
 	fmt.Printf("用户名: %v\n", validatedClaims.CustomClaims["username"])
 	fmt.Printf("邮箱: %v\n", validatedClaims.CustomClaims["email"])
 	fmt.Printf("部门: %v\n", validatedClaims.CustomClaims["department"])
@@ -244,7 +244,7 @@ func example6_ErrorHandling() {
 	fmt.Printf("生成的令牌: %s\n", token)
 
 	// 立即验证（应该成功）
-	_, err := config.ValidateToken(token)
+	_, err := config.VerifyToken(token)
 	if err != nil {
 		fmt.Printf("验证失败: %v\n", err)
 	} else {
@@ -256,14 +256,14 @@ func example6_ErrorHandling() {
 	time.Sleep(2 * time.Second)
 
 	// 验证过期令牌
-	_, err = config.ValidateToken(token)
+	_, err = config.VerifyToken(token)
 	if err != nil {
 		fmt.Printf("❌ 预期的错误：%v\n", err)
 	}
 
 	// 测试无效令牌
 	fmt.Println("\n测试无效令牌...")
-	_, err = config.ValidateToken("invalid.token.here")
+	_, err = config.VerifyToken("invalid.token.here")
 	if err != nil {
 		fmt.Printf("❌ 预期的错误：%v\n", err)
 	}
@@ -271,7 +271,7 @@ func example6_ErrorHandling() {
 	// 测试错误的密钥
 	fmt.Println("\n测试错误的密钥...")
 	wrongConfig := jwtutil.NewJWTConfig("wrong-secret-key")
-	_, err = wrongConfig.ValidateToken(token)
+	_, err = wrongConfig.VerifyToken(token)
 	if err != nil {
 		fmt.Printf("❌ 预期的错误：%v\n\n", err)
 	}

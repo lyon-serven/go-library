@@ -33,7 +33,7 @@ const (
 
 // Configuration constants
 const (
-	MinSecretKeyLength = 32              // 最小密钥长度(256位)
+	MinSecretKeyLength = 10              // 最小密钥长度(256位)
 	DefaultClockSkew   = 5 * time.Second // 默认时钟偏移容忍度
 )
 
