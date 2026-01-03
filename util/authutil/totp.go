@@ -159,7 +159,8 @@ func (ga *GoogleAuthenticator) GenerateQRCodeImageURLCN(secret string) string {
 	// qrURL := fmt.Sprintf("https://api.cli.im/qrcode/code?text=%s",
 	// 	url.QueryEscape(otpauthURL))
 
-	// 方案3: 使用联图网二维码API (免费，国内稳定)
+	// 方案3: 使用联
+	//二维码API (免费，国内稳定)
 	qrURL := fmt.Sprintf("https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=%s",
 		url.QueryEscape(otpauthURL))
 
@@ -337,24 +338,6 @@ func QuickGenerate(issuer, accountName string) (secret, qrCodeURL string, err er
 	}
 
 	qrCodeURL = ga.GenerateQRCodeImageURLCN(secret)
-	return secret, qrCodeURL, nil
-}
-
-// QuickGenerateWithGoogle generates a secret and QR code URL using Google Charts API
-// 使用Google Charts API（需要翻墙）
-func QuickGenerateWithGoogle(issuer, accountName string) (secret, qrCodeURL string, err error) {
-	config := DefaultTOTPConfig()
-	config.Issuer = issuer
-	config.AccountName = accountName
-
-	ga := NewGoogleAuthenticator(config)
-
-	secret, err = ga.GenerateSecret()
-	if err != nil {
-		return "", "", err
-	}
-
-	qrCodeURL = ga.GenerateQRCodeImageURL(secret)
 	return secret, qrCodeURL, nil
 }
 
