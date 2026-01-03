@@ -1,5 +1,5 @@
-// Package db provides GORM utilities for database operations
-package db
+// Package gorm provides GORM utilities for database operations
+package gorm
 
 import (
 	"fmt"
