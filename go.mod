@@ -6,10 +6,13 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-sql-driver/mysql v1.8.1
+	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/microsoft/go-mssqldb v1.8.2
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
+	go.uber.org/zap v1.27.1
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.5.9
@@ -32,8 +35,12 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/jonboulle/clockwork v0.5.0 // indirect
+	github.com/lestrrat-go/strftime v1.1.1 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 // indirect
 	golang.org/x/net v0.30.0 // indirect
