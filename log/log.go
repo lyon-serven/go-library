@@ -206,14 +206,25 @@ func createRotateLogsWriter(config *LogConfig) (io.Writer, error) {
 		linkName = filepath.Join(config.Path, "latest.log")
 	}
 
+	// 转换为绝对路径，避免Windows符号链接问题
+	absLogPath, err := filepath.Abs(logPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get absolute path: %w", err)
+	}
+
+	absLinkName, err := filepath.Abs(linkName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get absolute link path: %w", err)
+	}
+
 	options := []rotatelogs.Option{
 		rotatelogs.WithMaxAge(config.FileAge),
 		rotatelogs.WithRotationTime(config.RotationTime),
-		rotatelogs.WithLinkName(linkName), // 始终创建符号链接
+		rotatelogs.WithLinkName(absLinkName), // 使用绝对路径
 	}
 
 	return rotatelogs.New(
-		logPath,
+		absLogPath,
 		options...,
 	)
 }

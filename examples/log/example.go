@@ -54,11 +54,11 @@ func logDemo2() {
 func logTask() {
 	config := &log.LogConfig{
 		LogToFile:    true,
-		Path:         "./logs",
-		FileName:     "task.txt",                  // 支持.txt格式
-		FilePattern:  "job1/%Y_%m/%d/task_%H.log", // 像你原来的格式
-		RotationTime: time.Hour,                   // 每小时轮转
-		FileAge:      time.Hour * 24 * 7,          // 保留7天
+		Path:         "./logs/job1",           // 独立目录
+		FileName:     "task.txt",              // 支持.txt格式
+		FilePattern:  "/%Y_%m/%d/task_%H.log", // 去掉job1前缀
+		RotationTime: time.Hour,               // 每小时轮转
+		FileAge:      time.Hour * 24 * 7,      // 保留7天
 	}
 
 	logger, err := log.NewLogger(config)
@@ -66,16 +66,16 @@ func logTask() {
 		panic(err)
 	}
 	logger.Info("任务开始111111111")
-
 }
+
 func logTask2() {
 	config := &log.LogConfig{
 		LogToFile:    true,
-		Path:         "./logs",
-		FileName:     "task.txt",                  // 支持.txt格式
-		FilePattern:  "job2/%Y_%m/%d/task_%H.log", // 像你原来的格式
-		RotationTime: time.Hour,                   // 每小时轮转
-		FileAge:      time.Hour * 24 * 7,          // 保留7天
+		Path:         "./logs/job2",           // 独立目录
+		FileName:     "task.txt",              // 支持.txt格式
+		FilePattern:  "/%Y_%m/%d/task_%H.log", // 去掉job2前缀
+		RotationTime: time.Hour,               // 每小时轮转
+		FileAge:      time.Hour * 24 * 7,      // 保留7天
 	}
 
 	logger, err := log.NewLogger(config)
@@ -83,5 +83,4 @@ func logTask2() {
 		panic(err)
 	}
 	logger.Info("任务开始22222222")
-
 }
