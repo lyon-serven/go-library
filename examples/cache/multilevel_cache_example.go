@@ -44,7 +44,7 @@ func loadUserFromDatabase(ctx context.Context, key string) ([]byte, error) {
 	return data, nil
 }
 
-func main() {
+func main1() {
 	fmt.Println("=== 多级缓存示例 ===\n")
 
 	// 1. 创建各级缓存提供者
@@ -164,13 +164,13 @@ func main() {
 	}
 
 	// 9. 测试删除操作
-	fmt.Println("\n【测试删除】")
-	err = userCache.Delete(ctx, userKey)
-	if err != nil {
-		log.Printf("删除失败: %v", err)
-	} else {
-		fmt.Println("✅ 成功删除键")
-	}
+	//fmt.Println("\n【测试删除】")
+	//err = userCache.Delete(ctx, userKey)
+	//if err != nil {
+	//	log.Printf("删除失败: %v", err)
+	//} else {
+	//	fmt.Println("✅ 成功删除键")
+	//}
 
 	exists, _ := userCache.Exists(ctx, userKey)
 	fmt.Printf("删除后键是否存在: %v\n", exists)

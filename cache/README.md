@@ -1,6 +1,42 @@
-# Cache Management System
+# Cache Management System - 缓存管理系统
 
 基于依赖注入的缓存管理系统设计理念，支持多种缓存提供程序和序列化方式。
+
+## ✨ 新特性：便捷的键使用方式
+
+### 🔑 三种使用方式
+
+**方式1: 使用快捷函数 K() 和 NK() （推荐）**
+
+```go
+// 简单键
+cache.Get(ctx, cache.K("user:123"))
+
+// 带命名空间的键
+cache.Get(ctx, cache.NK("users", "123"))
+```
+
+**方式2: 使用字符串方法 ICacheExt**
+
+```go
+// 包装为支持字符串的缓存
+extCache := cache.NewCacheExt(myCache)
+
+// 直接使用字符串
+extCache.GetS(ctx, "user:123")
+extCache.SetS(ctx, "user:123", value, nil)
+```
+
+**方式3: 显式创建 CacheKey**
+
+```go
+key := cache.NewCacheKey("123", "users")
+cache.Get(ctx, key)
+```
+
+📖 **详细使用指南**：查看 [USAGE_GUIDE.md](./USAGE_GUIDE.md)
+
+---
 
 ## 🏗️ 架构设计
 
@@ -8,6 +44,7 @@
 
 - **ICacheManager**: 缓存管理器，负责依赖注入和配置管理
 - **ICache**: 缓存操作接口，提供 Get/Set/Remove 等操作
+- **ICacheExt**: 扩展接口，支持字符串键的便捷方法
 - **ICacheProvider**: 缓存提供程序接口，支持不同的存储后端
 - **ICacheSerializer**: 序列化器接口，支持不同的数据序列化方式
 
@@ -48,6 +85,7 @@ options := &providers.MemoryCacheOptions{
     EnableLRU:         true,                    // 启用LRU淘汰
 }
 memoryCache := providers.NewMemoryCache(options)
+```
 ```
 
 **特性:**

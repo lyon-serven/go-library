@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// CacheManager implements ICacheManager with dependency injection support
+// CacheManager 实现 ICacheManager 接口，支持依赖注入
 type CacheManager struct {
 	mu                sync.RWMutex
 	providers         map[string]ICacheProvider
@@ -18,7 +18,7 @@ type CacheManager struct {
 	defaultSerializer string
 }
 
-// NewCacheManager creates a new cache manager
+// NewCacheManager 创建一个新的缓存管理器
 func NewCacheManager() *CacheManager {
 	return &CacheManager{
 		providers:      make(map[string]ICacheProvider),
@@ -28,7 +28,7 @@ func NewCacheManager() *CacheManager {
 	}
 }
 
-// RegisterProvider registers a cache provider
+// RegisterProvider 注册一个缓存提供者
 func (cm *CacheManager) RegisterProvider(name string, provider ICacheProvider) error {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
@@ -39,7 +39,7 @@ func (cm *CacheManager) RegisterProvider(name string, provider ICacheProvider) e
 
 	cm.providers[name] = provider
 
-	// Set as default if it's the first provider
+	// 如果是第一个提供者，设置为默认提供者
 	if cm.defaultProvider == "" {
 		cm.defaultProvider = name
 	}
@@ -47,7 +47,7 @@ func (cm *CacheManager) RegisterProvider(name string, provider ICacheProvider) e
 	return nil
 }
 
-// RegisterSerializer registers a cache serializer
+// RegisterSerializer 注册一个缓存序列化器
 func (cm *CacheManager) RegisterSerializer(name string, serializer ICacheSerializer) error {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
@@ -58,7 +58,7 @@ func (cm *CacheManager) RegisterSerializer(name string, serializer ICacheSeriali
 
 	cm.serializers[name] = serializer
 
-	// Set as default if it's the first serializer
+	// 如果是第一个序列化器，设置为默认序列化器
 	if cm.defaultSerializer == "" {
 		cm.defaultSerializer = name
 	}
@@ -66,7 +66,7 @@ func (cm *CacheManager) RegisterSerializer(name string, serializer ICacheSeriali
 	return nil
 }
 
-// SetDefaultProvider sets the default cache provider
+// SetDefaultProvider 设置默认的缓存提供者
 func (cm *CacheManager) SetDefaultProvider(name string) error {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
@@ -79,7 +79,7 @@ func (cm *CacheManager) SetDefaultProvider(name string) error {
 	return nil
 }
 
-// SetDefaultSerializer sets the default cache serializer
+// SetDefaultSerializer 设置默认的缓存序列化器
 func (cm *CacheManager) SetDefaultSerializer(name string) error {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
@@ -92,22 +92,22 @@ func (cm *CacheManager) SetDefaultSerializer(name string) error {
 	return nil
 }
 
-// Configure configures a specific cache with custom provider and serializer
+// Configure 配置特定的缓存，使用自定义的提供者和序列化器
 func (cm *CacheManager) Configure(cacheName string, providerName string, serializerName string) error {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
-	// Validate provider
+	// 验证提供者
 	if _, exists := cm.providers[providerName]; !exists {
 		return fmt.Errorf("provider '%s' not found", providerName)
 	}
 
-	// Validate serializer
+	// 验证序列化器
 	if _, exists := cm.serializers[serializerName]; !exists {
 		return fmt.Errorf("serializer '%s' not found", serializerName)
 	}
 
-	// Store configuration
+	// 存储配置
 	cm.configurations[cacheName] = &CacheConfiguration{
 		Name:           cacheName,
 		ProviderName:   providerName,
@@ -115,13 +115,13 @@ func (cm *CacheManager) Configure(cacheName string, providerName string, seriali
 		DefaultOptions: DefaultCacheOptions(),
 	}
 
-	// Remove existing cache instance to force recreation with new config
+	// 删除现有的缓存实例，强制使用新配置重新创建
 	delete(cm.caches, cacheName)
 
 	return nil
 }
 
-// GetCache gets or creates a cache instance with the specified name
+// GetCache 获取或创建指定名称的缓存实例
 func (cm *CacheManager) GetCache(name string) ICache {
 	cm.mu.RLock()
 	cache, exists := cm.caches[name]
@@ -131,16 +131,16 @@ func (cm *CacheManager) GetCache(name string) ICache {
 		return cache
 	}
 
-	// Create new cache instance
+	// 创建新的缓存实例
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
-	// Double-check locking pattern
+	// 双重检查锁定模式
 	if cache, exists := cm.caches[name]; exists {
 		return cache
 	}
 
-	// Get configuration or use defaults
+	// 获取配置或使用默认配置
 	config := cm.configurations[name]
 	if config == nil {
 		config = &CacheConfiguration{
@@ -151,7 +151,7 @@ func (cm *CacheManager) GetCache(name string) ICache {
 		}
 	}
 
-	// Get provider and serializer
+	// 获取提供者和序列化器
 	provider := cm.providers[config.ProviderName]
 	serializer := cm.serializers[config.SerializerName]
 
@@ -163,28 +163,28 @@ func (cm *CacheManager) GetCache(name string) ICache {
 		panic(fmt.Sprintf("no serializer available for cache '%s'", name))
 	}
 
-	// Create cache instance
+	// 创建缓存实例
 	cache = NewCache(name, provider, serializer, config.DefaultOptions)
 	cm.caches[name] = cache
 
 	return cache
 }
 
-// Close closes all providers and releases resources
+// Close 关闭所有提供者并释放资源
 func (cm *CacheManager) Close() error {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
 	var errors []error
 
-	// Close all providers
+	// 关闭所有提供者
 	for _, provider := range cm.providers {
 		if err := provider.Close(); err != nil {
 			errors = append(errors, err)
 		}
 	}
 
-	// Clear all maps
+	// 清空所有映射表
 	cm.providers = make(map[string]ICacheProvider)
 	cm.serializers = make(map[string]ICacheSerializer)
 	cm.caches = make(map[string]ICache)
@@ -197,7 +197,7 @@ func (cm *CacheManager) Close() error {
 	return nil
 }
 
-// Cache implements ICache interface
+// Cache 实现 ICache 接口
 type Cache struct {
 	name           string
 	provider       ICacheProvider
@@ -205,7 +205,7 @@ type Cache struct {
 	defaultOptions *CacheOptions
 }
 
-// NewCache creates a new cache instance
+// NewCache 创建一个新的缓存实例
 func NewCache(name string, provider ICacheProvider, serializer ICacheSerializer, defaultOptions *CacheOptions) *Cache {
 	return &Cache{
 		name:           name,
@@ -215,7 +215,7 @@ func NewCache(name string, provider ICacheProvider, serializer ICacheSerializer,
 	}
 }
 
-// Get retrieves a value from cache
+// Get 从缓存中获取值
 func (c *Cache) Get(ctx context.Context, key CacheKey) (interface{}, error) {
 	data, err := c.provider.GetRaw(ctx, key.String())
 	if err != nil {
@@ -235,7 +235,7 @@ func (c *Cache) Get(ctx context.Context, key CacheKey) (interface{}, error) {
 	return value, nil
 }
 
-// GetAsync retrieves a value from cache asynchronously
+// GetAsync 异步从缓存中获取值
 func (c *Cache) GetAsync(ctx context.Context, key CacheKey) <-chan CacheResult {
 	result := make(chan CacheResult, 1)
 
@@ -248,7 +248,7 @@ func (c *Cache) GetAsync(ctx context.Context, key CacheKey) <-chan CacheResult {
 	return result
 }
 
-// Set stores a value in cache with options
+// Set 将值存储到缓存中，带有选项参数
 func (c *Cache) Set(ctx context.Context, key CacheKey, value interface{}, options *CacheOptions) error {
 	if options == nil {
 		options = c.defaultOptions
@@ -259,7 +259,7 @@ func (c *Cache) Set(ctx context.Context, key CacheKey, value interface{}, option
 		return fmt.Errorf("failed to serialize cache value: %w", err)
 	}
 
-	// Calculate expiration duration
+	// 计算过期时间
 	var expiration time.Duration
 	if options.AbsoluteExpiration != nil {
 		expiration = time.Until(*options.AbsoluteExpiration)
@@ -270,7 +270,7 @@ func (c *Cache) Set(ctx context.Context, key CacheKey, value interface{}, option
 	return c.provider.SetRaw(ctx, key.String(), data, expiration)
 }
 
-// SetAsync stores a value in cache asynchronously
+// SetAsync 异步将值存储到缓存中
 func (c *Cache) SetAsync(ctx context.Context, key CacheKey, value interface{}, options *CacheOptions) <-chan error {
 	result := make(chan error, 1)
 
@@ -282,58 +282,58 @@ func (c *Cache) SetAsync(ctx context.Context, key CacheKey, value interface{}, o
 	return result
 }
 
-// Remove removes a value from cache
+// Remove 从缓存中移除值
 func (c *Cache) Remove(ctx context.Context, key CacheKey) error {
 	return c.provider.Remove(ctx, key.String())
 }
 
-// RemoveByPattern removes all keys matching the pattern
+// RemoveByPattern 移除所有匹配模式的键
 func (c *Cache) RemoveByPattern(ctx context.Context, pattern string) error {
 	return c.provider.RemoveByPattern(ctx, pattern)
 }
 
-// Exists checks if a key exists in cache
+// Exists 检查键是否存在于缓存中
 func (c *Cache) Exists(ctx context.Context, key CacheKey) (bool, error) {
 	return c.provider.Exists(ctx, key.String())
 }
 
-// Clear clears all cache entries
+// Clear 清空所有缓存条目
 func (c *Cache) Clear(ctx context.Context) error {
 	return c.provider.Clear(ctx)
 }
 
-// GetOrSet gets a value from cache or sets it using the provided factory
+// GetOrSet 从缓存中获取值，如果不存在则使用提供的工厂函数设置
 func (c *Cache) GetOrSet(ctx context.Context, key CacheKey, factory func() (interface{}, error), options *CacheOptions) (interface{}, error) {
-	// Try to get existing value
+	// 尝试获取现有值
 	value, err := c.Get(ctx, key)
 	if err != nil {
 		return nil, err
 	}
 
-	// Return existing value if found
+	// 如果找到现有值，则返回
 	if value != nil {
 		return value, nil
 	}
 
-	// Generate new value using factory
+	// 使用工厂函数生成新值
 	value, err = factory()
 	if err != nil {
 		return nil, err
 	}
 
-	// Set the new value in cache
+	// 将新值设置到缓存中
 	err = c.Set(ctx, key, value, options)
 	if err != nil {
-		// Return the value even if caching failed
+		// 即使缓存失败也返回值
 		return value, nil
 	}
 
 	return value, nil
 }
 
-// Refresh refreshes the expiration time of a cache item
+// Refresh 刷新缓存项的过期时间
 func (c *Cache) Refresh(ctx context.Context, key CacheKey) error {
-	// Get current value
+	// 获取当前值
 	value, err := c.Get(ctx, key)
 	if err != nil {
 		return err
@@ -343,6 +343,6 @@ func (c *Cache) Refresh(ctx context.Context, key CacheKey) error {
 		return fmt.Errorf("key '%s' not found in cache", key.String())
 	}
 
-	// Reset with default options to refresh expiration
+	// 使用默认选项重新设置以刷新过期时间
 	return c.Set(ctx, key, value, c.defaultOptions)
 }

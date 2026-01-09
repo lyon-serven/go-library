@@ -7,14 +7,14 @@ import (
 	"time"
 )
 
-// CacheLevel represents a single level in the multi-level cache
+// CacheLevel 表示多级缓存中的单个级别
 type CacheLevel struct {
 	Name     string
 	Provider ICacheProvider
-	Priority int // Lower number = higher priority (L1=1, L2=2, L3=3)
+	Priority int // 数字越小 = 优先级越高（L1=1, L2=2, L3=3）
 }
 
-// ICacheProvider interface (should match the one in cache package)
+// ICacheProvider 接口（应与 cache 包中的接口匹配）
 type ICacheProvider interface {
 	GetRaw(ctx context.Context, key string) ([]byte, error)
 	SetRaw(ctx context.Context, key string, value []byte, expiration time.Duration) error
@@ -26,10 +26,10 @@ type ICacheProvider interface {
 	Close() error
 }
 
-// MultiLevelCacheProvider implements a multi-level cache strategy
-// L1: Local Memory Cache (fastest)
-// L2: Redis Cache (shared across instances)
-// L3: Database/Persistent Storage (slowest, with loader function)
+// MultiLevelCacheProvider 实现多级缓存策略
+// L1：本地内存缓存（最快）
+// L2：Redis 缓存（跨实例共享）
+// L3：数据库/持久化存储（最慢，带加载器函数）
 type MultiLevelCacheProvider struct {
 	mu              sync.RWMutex
 	levels          []CacheLevel
@@ -41,44 +41,44 @@ type MultiLevelCacheProvider struct {
 	wg              sync.WaitGroup
 }
 
-// DatabaseLoader is a function type for loading data from database
+// DatabaseLoader 是从数据库加载数据的函数类型
 type DatabaseLoader func(ctx context.Context, key string) ([]byte, error)
 
-// MultiLevelCacheOptions defines options for multi-level cache
+// MultiLevelCacheOptions 定义多级缓存的选项
 type MultiLevelCacheOptions struct {
-	// EnableAsyncWrite enables asynchronous writes to lower levels
+	// EnableAsyncWrite 启用向较低级别的异步写入
 	EnableAsyncWrite bool
-	// EnableAutoSync enables automatic synchronization between levels
+	// EnableAutoSync 启用级别之间的自动同步
 	EnableAutoSync bool
-	// SyncInterval is the interval for automatic synchronization
+	// SyncInterval 自动同步的间隔时间
 	SyncInterval time.Duration
-	// WriteDownLevels controls how many levels down to write (0 = all levels)
+	// WriteDownLevels 控制向下写入多少级别（0 = 所有级别）
 	WriteDownLevels int
-	// EnableMetrics enables performance metrics collection
+	// EnableMetrics 启用性能指标收集
 	EnableMetrics bool
-	// L1TTL is the TTL for L1 cache (memory)
+	// L1TTL L1 缓存的 TTL（内存）
 	L1TTL time.Duration
-	// L2TTL is the TTL for L2 cache (redis)
+	// L2TTL L2 缓存的 TTL（Redis）
 	L2TTL time.Duration
-	// EnableWriteBack enables write-back strategy (write to L1 first, then async to others)
+	// EnableWriteBack 启用回写策略（先写入 L1，然后异步写入其他级别）
 	EnableWriteBack bool
 }
 
-// DefaultMultiLevelCacheOptions returns default options
+// DefaultMultiLevelCacheOptions 返回默认选项
 func DefaultMultiLevelCacheOptions() *MultiLevelCacheOptions {
 	return &MultiLevelCacheOptions{
 		EnableAsyncWrite: true,
 		EnableAutoSync:   false,
 		SyncInterval:     time.Minute * 5,
-		WriteDownLevels:  0, // Write to all levels
+		WriteDownLevels:  0, // 写入所有级别
 		EnableMetrics:    true,
-		L1TTL:            time.Minute * 5, // L1: 5 minutes
-		L2TTL:            time.Hour * 1,   // L2: 1 hour
+		L1TTL:            time.Minute * 5, // L1：5 分钟
+		L2TTL:            time.Hour * 1,   // L2：1 小时
 		EnableWriteBack:  true,
 	}
 }
 
-// MultiLevelMetrics tracks cache performance metrics
+// MultiLevelMetrics 跟踪缓存性能指标
 type MultiLevelMetrics struct {
 	mu             sync.RWMutex
 	L1Hits         int64
@@ -89,19 +89,19 @@ type MultiLevelMetrics struct {
 	L1WriteCount   int64
 	L2WriteCount   int64
 	L3WriteCount   int64
-	PromotionCount int64 // Count of data promoted to higher levels
+	PromotionCount int64 // 数据提升到更高级别的次数
 }
 
-// writeTask represents an async write task
+// writeTask 表示一个异步写入任务
 type writeTask struct {
 	ctx        context.Context
 	key        string
 	value      []byte
 	expiration time.Duration
-	levels     []int // Target levels to write to
+	levels     []int // 要写入的目标级别
 }
 
-// NewMultiLevelCacheProvider creates a new multi-level cache provider
+// NewMultiLevelCacheProvider 创建一个新的多级缓存提供者
 func NewMultiLevelCacheProvider(options *MultiLevelCacheOptions, dbLoader DatabaseLoader) *MultiLevelCacheProvider {
 	if options == nil {
 		options = DefaultMultiLevelCacheOptions()
@@ -116,7 +116,7 @@ func NewMultiLevelCacheProvider(options *MultiLevelCacheOptions, dbLoader Databa
 		stopChan:        make(chan struct{}),
 	}
 
-	// Start async write workers if enabled
+	// 如果启用，启动异步写入工作协程
 	if options.EnableAsyncWrite {
 		mlcp.startAsyncWriteWorkers(3) // 3 worker goroutines
 	}
@@ -124,12 +124,12 @@ func NewMultiLevelCacheProvider(options *MultiLevelCacheOptions, dbLoader Databa
 	return mlcp
 }
 
-// AddLevel adds a cache level to the multi-level cache
+// AddLevel 向多级缓存添加一个缓存级别
 func (mlcp *MultiLevelCacheProvider) AddLevel(name string, provider ICacheProvider, priority int) error {
 	mlcp.mu.Lock()
 	defer mlcp.mu.Unlock()
 
-	// Check if level already exists
+	// 检查级别是否已存在
 	for _, level := range mlcp.levels {
 		if level.Priority == priority {
 			return fmt.Errorf("cache level with priority %d already exists", priority)
@@ -139,22 +139,22 @@ func (mlcp *MultiLevelCacheProvider) AddLevel(name string, provider ICacheProvid
 		}
 	}
 
-	// Add new level
+	// 添加新级别
 	mlcp.levels = append(mlcp.levels, CacheLevel{
 		Name:     name,
 		Provider: provider,
 		Priority: priority,
 	})
 
-	// Sort levels by priority (ascending)
+	// 按优先级排序（升序）
 	mlcp.sortLevels()
 
 	return nil
 }
 
-// sortLevels sorts cache levels by priority
+// sortLevels 按优先级对缓存级别排序
 func (mlcp *MultiLevelCacheProvider) sortLevels() {
-	// Bubble sort (simple, sufficient for small number of levels)
+	// 冒泡排序（简单，适用于少量级别）
 	for i := 0; i < len(mlcp.levels); i++ {
 		for j := i + 1; j < len(mlcp.levels); j++ {
 			if mlcp.levels[i].Priority > mlcp.levels[j].Priority {
@@ -164,7 +164,7 @@ func (mlcp *MultiLevelCacheProvider) sortLevels() {
 	}
 }
 
-// GetRaw retrieves data from cache, trying each level in order
+// GetRaw 从缓存中获取数据，按顺序尝试每个级别
 func (mlcp *MultiLevelCacheProvider) GetRaw(ctx context.Context, key string) ([]byte, error) {
 	if mlcp.options.EnableMetrics {
 		mlcp.metrics.mu.Lock()
@@ -176,14 +176,14 @@ func (mlcp *MultiLevelCacheProvider) GetRaw(ctx context.Context, key string) ([]
 	levels := mlcp.levels
 	mlcp.mu.RUnlock()
 
-	// Try each level in order (L1 -> L2 -> L3 -> DB)
+	// 按顺序尝试每个级别（L1 -> L2 -> L3 -> DB）
 	for i, level := range levels {
 		data, err := level.Provider.GetRaw(ctx, key)
 		if err == nil && data != nil {
-			// Cache hit - update metrics
+			// 缓存命中 - 更新指标
 			mlcp.recordHit(i + 1)
 
-			// Promote data to higher levels (cache warming)
+			// 将数据提升到更高级别（缓存预热）
 			if i > 0 {
 				mlcp.promoteToHigherLevels(ctx, key, data, i)
 			}
@@ -192,21 +192,21 @@ func (mlcp *MultiLevelCacheProvider) GetRaw(ctx context.Context, key string) ([]
 		}
 	}
 
-	// All cache levels missed, try database loader
+	// 所有缓存级别未命中，尝试数据库加载器
 	if mlcp.dbLoader != nil {
 		data, err := mlcp.dbLoader(ctx, key)
 		if err == nil && data != nil {
-			// Record L3 (database) hit
+			// 记录 L3（数据库）命中
 			mlcp.recordHit(3)
 
-			// Write back to all cache levels
+			// 回写到所有缓存级别
 			mlcp.writeToAllLevels(ctx, key, data)
 
 			return data, nil
 		}
 	}
 
-	// Complete miss
+	// 完全未命中
 	if mlcp.options.EnableMetrics {
 		mlcp.metrics.mu.Lock()
 		mlcp.metrics.Misses++
@@ -216,7 +216,7 @@ func (mlcp *MultiLevelCacheProvider) GetRaw(ctx context.Context, key string) ([]
 	return nil, fmt.Errorf("cache miss: key '%s' not found in any level", key)
 }
 
-// SetRaw stores data in cache, writing to all configured levels
+// SetRaw 将数据存储到缓存中，写入所有配置的级别
 func (mlcp *MultiLevelCacheProvider) SetRaw(ctx context.Context, key string, value []byte, expiration time.Duration) error {
 	mlcp.mu.RLock()
 	levels := mlcp.levels
@@ -227,22 +227,22 @@ func (mlcp *MultiLevelCacheProvider) SetRaw(ctx context.Context, key string, val
 		return fmt.Errorf("no cache levels configured")
 	}
 
-	// Determine which levels to write to
+	// 确定要写入哪些级别
 	targetLevels := len(levels)
 	if writeDownLevels > 0 && writeDownLevels < targetLevels {
 		targetLevels = writeDownLevels
 	}
 
-	// Write-back strategy: write to L1 immediately, others async
+	// 回写策略：立即写入 L1，其他异步写入
 	if mlcp.options.EnableWriteBack && len(levels) > 0 {
-		// Write to L1 immediately
+		// 立即写入 L1
 		err := levels[0].Provider.SetRaw(ctx, key, value, mlcp.getTTLForLevel(1, expiration))
 		if err != nil {
 			return fmt.Errorf("failed to write to L1 cache: %w", err)
 		}
 		mlcp.recordWrite(1)
 
-		// Write to other levels asynchronously
+		// 异步写入其他级别
 		if mlcp.options.EnableAsyncWrite && targetLevels > 1 {
 			levelIndices := make([]int, targetLevels-1)
 			for i := 1; i < targetLevels; i++ {
@@ -258,7 +258,7 @@ func (mlcp *MultiLevelCacheProvider) SetRaw(ctx context.Context, key string, val
 				levels:     levelIndices,
 			}:
 			default:
-				// Queue is full, write synchronously as fallback
+				// 队列已满，回退到同步写入
 				mlcp.writeSyncToLevels(ctx, key, value, expiration, levelIndices)
 			}
 		}
@@ -266,7 +266,7 @@ func (mlcp *MultiLevelCacheProvider) SetRaw(ctx context.Context, key string, val
 		return nil
 	}
 
-	// Write-through strategy: write to all levels synchronously
+	// 直写策略：同步写入所有级别
 	var firstError error
 	for i := 0; i < targetLevels; i++ {
 		ttl := mlcp.getTTLForLevel(i+1, expiration)
@@ -281,7 +281,7 @@ func (mlcp *MultiLevelCacheProvider) SetRaw(ctx context.Context, key string, val
 	return firstError
 }
 
-// Remove removes data from all cache levels
+// Remove 从所有缓存级别移除数据
 func (mlcp *MultiLevelCacheProvider) Remove(ctx context.Context, key string) error {
 	mlcp.mu.RLock()
 	levels := mlcp.levels
@@ -301,7 +301,7 @@ func (mlcp *MultiLevelCacheProvider) Remove(ctx context.Context, key string) err
 	return nil
 }
 
-// RemoveByPattern removes data matching pattern from all cache levels
+// RemoveByPattern 从所有缓存级别移除匹配模式的数据
 func (mlcp *MultiLevelCacheProvider) RemoveByPattern(ctx context.Context, pattern string) error {
 	mlcp.mu.RLock()
 	levels := mlcp.levels
@@ -321,7 +321,7 @@ func (mlcp *MultiLevelCacheProvider) RemoveByPattern(ctx context.Context, patter
 	return nil
 }
 
-// Exists checks if key exists in any cache level
+// Exists 检查键是否存在于任何缓存级别
 func (mlcp *MultiLevelCacheProvider) Exists(ctx context.Context, key string) (bool, error) {
 	mlcp.mu.RLock()
 	levels := mlcp.levels
@@ -340,7 +340,7 @@ func (mlcp *MultiLevelCacheProvider) Exists(ctx context.Context, key string) (bo
 	return false, nil
 }
 
-// Clear clears all cache levels
+// Clear 清空所有缓存级别
 func (mlcp *MultiLevelCacheProvider) Clear(ctx context.Context) error {
 	mlcp.mu.RLock()
 	levels := mlcp.levels
@@ -365,9 +365,9 @@ func (mlcp *MultiLevelCacheProvider) Name() string {
 	return "MultiLevel"
 }
 
-// Close closes all cache levels and workers
+// Close 关闭所有缓存级别和工作协程
 func (mlcp *MultiLevelCacheProvider) Close() error {
-	// Stop async workers
+	// 停止异步工作协程
 	close(mlcp.stopChan)
 	mlcp.wg.Wait()
 	close(mlcp.asyncWriteQueue)
@@ -389,12 +389,12 @@ func (mlcp *MultiLevelCacheProvider) Close() error {
 	return nil
 }
 
-// GetMetrics returns cache performance metrics
+// GetMetrics 返回缓存性能指标
 func (mlcp *MultiLevelCacheProvider) GetMetrics() *MultiLevelMetrics {
 	mlcp.metrics.mu.RLock()
 	defer mlcp.metrics.mu.RUnlock()
 
-	// Return a copy
+	// 返回副本
 	return &MultiLevelMetrics{
 		L1Hits:         mlcp.metrics.L1Hits,
 		L2Hits:         mlcp.metrics.L2Hits,
@@ -408,7 +408,7 @@ func (mlcp *MultiLevelCacheProvider) GetMetrics() *MultiLevelMetrics {
 	}
 }
 
-// PrintMetrics prints cache metrics (for debugging)
+// PrintMetrics 打印缓存指标（用于调试）
 func (mlcp *MultiLevelCacheProvider) PrintMetrics() {
 	metrics := mlcp.GetMetrics()
 	total := metrics.TotalRequests
@@ -437,7 +437,7 @@ func (mlcp *MultiLevelCacheProvider) PrintMetrics() {
 
 // Helper methods
 
-// recordHit records a cache hit for the specified level
+// recordHit 记录指定级别的缓存命中
 func (mlcp *MultiLevelCacheProvider) recordHit(level int) {
 	if !mlcp.options.EnableMetrics {
 		return
@@ -456,7 +456,7 @@ func (mlcp *MultiLevelCacheProvider) recordHit(level int) {
 	}
 }
 
-// recordWrite records a cache write for the specified level
+// recordWrite 记录指定级别的缓存写入
 func (mlcp *MultiLevelCacheProvider) recordWrite(level int) {
 	if !mlcp.options.EnableMetrics {
 		return
@@ -475,7 +475,7 @@ func (mlcp *MultiLevelCacheProvider) recordWrite(level int) {
 	}
 }
 
-// promoteToHigherLevels writes data to higher priority cache levels
+// promoteToHigherLevels 将数据写入优先级更高的缓存级别
 func (mlcp *MultiLevelCacheProvider) promoteToHigherLevels(ctx context.Context, key string, data []byte, currentLevel int) {
 	if mlcp.options.EnableMetrics {
 		mlcp.metrics.mu.Lock()
@@ -483,11 +483,11 @@ func (mlcp *MultiLevelCacheProvider) promoteToHigherLevels(ctx context.Context, 
 		mlcp.metrics.mu.Unlock()
 	}
 
-	// Promote to all higher levels
+	// 提升到所有更高级别
 	for i := 0; i < currentLevel; i++ {
 		ttl := mlcp.getTTLForLevel(i+1, 0)
 		if mlcp.options.EnableAsyncWrite {
-			// Async promotion
+			// 异步提升
 			select {
 			case mlcp.asyncWriteQueue <- writeTask{
 				ctx:        context.Background(),
@@ -497,17 +497,17 @@ func (mlcp *MultiLevelCacheProvider) promoteToHigherLevels(ctx context.Context, 
 				levels:     []int{i},
 			}:
 			default:
-				// Queue full, skip promotion
+				// 队列已满，跳过提升
 			}
 		} else {
-			// Sync promotion
+			// 同步提升
 			mlcp.levels[i].Provider.SetRaw(ctx, key, data, ttl)
 			mlcp.recordWrite(i + 1)
 		}
 	}
 }
 
-// writeToAllLevels writes data to all cache levels
+// writeToAllLevels 将数据写入所有缓存级别
 func (mlcp *MultiLevelCacheProvider) writeToAllLevels(ctx context.Context, key string, data []byte) {
 	mlcp.mu.RLock()
 	levels := mlcp.levels
@@ -521,7 +521,7 @@ func (mlcp *MultiLevelCacheProvider) writeToAllLevels(ctx context.Context, key s
 	}
 }
 
-// writeSyncToLevels writes data synchronously to specified levels
+// writeSyncToLevels 将数据同步写入指定级别
 func (mlcp *MultiLevelCacheProvider) writeSyncToLevels(ctx context.Context, key string, value []byte, expiration time.Duration, levelIndices []int) {
 	mlcp.mu.RLock()
 	levels := mlcp.levels
@@ -537,7 +537,7 @@ func (mlcp *MultiLevelCacheProvider) writeSyncToLevels(ctx context.Context, key 
 	}
 }
 
-// getTTLForLevel returns the appropriate TTL for a cache level
+// getTTLForLevel 返回缓存级别的适当 TTL
 func (mlcp *MultiLevelCacheProvider) getTTLForLevel(level int, defaultTTL time.Duration) time.Duration {
 	if defaultTTL > 0 {
 		return defaultTTL
@@ -549,11 +549,11 @@ func (mlcp *MultiLevelCacheProvider) getTTLForLevel(level int, defaultTTL time.D
 	case 2:
 		return mlcp.options.L2TTL
 	default:
-		return time.Hour * 24 // Default for L3+
+		return time.Hour * 24 // L3+ 的默认值
 	}
 }
 
-// startAsyncWriteWorkers starts worker goroutines for async writes
+// startAsyncWriteWorkers 启动用于异步写入的工作协程
 func (mlcp *MultiLevelCacheProvider) startAsyncWriteWorkers(numWorkers int) {
 	for i := 0; i < numWorkers; i++ {
 		mlcp.wg.Add(1)
@@ -561,7 +561,7 @@ func (mlcp *MultiLevelCacheProvider) startAsyncWriteWorkers(numWorkers int) {
 	}
 }
 
-// asyncWriteWorker processes async write tasks
+// asyncWriteWorker 处理异步写入任务
 func (mlcp *MultiLevelCacheProvider) asyncWriteWorker() {
 	defer mlcp.wg.Done()
 
@@ -578,7 +578,7 @@ func (mlcp *MultiLevelCacheProvider) asyncWriteWorker() {
 	}
 }
 
-// processWriteTask processes a single write task
+// processWriteTask 处理单个写入任务
 func (mlcp *MultiLevelCacheProvider) processWriteTask(task writeTask) {
 	mlcp.mu.RLock()
 	levels := mlcp.levels

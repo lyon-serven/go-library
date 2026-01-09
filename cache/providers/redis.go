@@ -8,27 +8,27 @@ import (
 	"time"
 )
 
-// RedisOptions defines options for Redis cache
+// RedisOptions 定义 Redis 缓存的选项
 type RedisOptions struct {
-	// Addresses is a list of Redis server addresses (for cluster mode)
+	// Addresses Redis 服务器地址列表（用于集群模式）
 	Addresses []string
-	// Password for Redis authentication
+	// Password Redis 认证密码
 	Password string
-	// Database number
+	// DB 数据库编号
 	DB int
-	// Connection timeout
+	// DialTimeout 连接超时时间
 	DialTimeout time.Duration
-	// Read timeout
+	// ReadTimeout 读取超时时间
 	ReadTimeout time.Duration
-	// Write timeout
+	// WriteTimeout 写入超时时间
 	WriteTimeout time.Duration
-	// Pool size
+	// PoolSize 连接池大小
 	PoolSize int
-	// Key prefix for all cache keys
+	// KeyPrefix 所有缓存键的前缀
 	KeyPrefix string
 }
 
-// DefaultRedisOptions returns default options for Redis cache
+// DefaultRedisOptions 返回 Redis 缓存的默认选项
 func DefaultRedisOptions() *RedisOptions {
 	return &RedisOptions{
 		Addresses:    []string{"localhost:6379"},
@@ -40,22 +40,22 @@ func DefaultRedisOptions() *RedisOptions {
 	}
 }
 
-// RedisCache implements ICacheProvider using Redis
-// Note: This is a simplified implementation. In production, you would use a proper Redis client like go-redis
+// RedisCache 使用 Redis 实现 ICacheProvider 接口
+// 注意：这是一个简化的实现。在生产环境中，应该使用适当的 Redis 客户端，如 go-redis
 type RedisCache struct {
 	options *RedisOptions
 	conn    net.Conn
 }
 
-// NewRedisCache creates a new Redis cache provider
-// Note: This is a basic implementation for demonstration.
-// In production, use a proper Redis client library like github.com/go-redis/redis/v8
+// NewRedisCache 创建一个新的 Redis 缓存提供者
+// 注意：这是一个用于演示的基本实现。
+// 在生产环境中，请使用适当的 Redis 客户端库，如 github.com/go-redis/redis/v8
 func NewRedisCache(options *RedisOptions) (*RedisCache, error) {
 	if options == nil {
 		options = DefaultRedisOptions()
 	}
 
-	// Connect to the first Redis server
+	// 连接到第一个 Redis 服务器
 	addr := options.Addresses[0]
 	conn, err := net.DialTimeout("tcp", addr, options.DialTimeout)
 	if err != nil {
@@ -67,7 +67,7 @@ func NewRedisCache(options *RedisOptions) (*RedisCache, error) {
 		conn:    conn,
 	}
 
-	// Authenticate if password is provided
+	// 如果提供了密码，进行认证
 	if options.Password != "" {
 		if err := rc.auth(); err != nil {
 			conn.Close()
@@ -75,7 +75,7 @@ func NewRedisCache(options *RedisOptions) (*RedisCache, error) {
 		}
 	}
 
-	// Select database
+	// 选择数据库
 	if options.DB != 0 {
 		if err := rc.selectDB(); err != nil {
 			conn.Close()
@@ -91,30 +91,30 @@ func (rc *RedisCache) Name() string {
 	return "redis"
 }
 
-// GetRaw retrieves raw data from Redis
+// GetRaw 从 Redis 获取原始数据
 func (rc *RedisCache) GetRaw(ctx context.Context, key string) ([]byte, error) {
 	fullKey := rc.buildKey(key)
 
-	// Send GET command
+	// 发送 GET 命令
 	cmd := fmt.Sprintf("GET %s\r\n", fullKey)
 	if _, err := rc.conn.Write([]byte(cmd)); err != nil {
 		return nil, fmt.Errorf("failed to send GET command: %w", err)
 	}
 
-	// Read response
+	// 读取响应
 	response, err := rc.readResponse()
 	if err != nil {
 		return nil, err
 	}
 
-	// Parse response
+	// 解析响应
 	if strings.HasPrefix(response, "$-1") {
-		// Key not found
+		// 键未找到
 		return nil, nil
 	}
 
 	if strings.HasPrefix(response, "$") {
-		// Bulk string response
+		// 批量字符串响应
 		lines := strings.Split(response, "\r\n")
 		if len(lines) >= 2 {
 			return []byte(lines[1]), nil
@@ -124,17 +124,17 @@ func (rc *RedisCache) GetRaw(ctx context.Context, key string) ([]byte, error) {
 	return nil, fmt.Errorf("unexpected Redis response: %s", response)
 }
 
-// SetRaw stores raw data in Redis
+// SetRaw 将原始数据存储到 Redis
 func (rc *RedisCache) SetRaw(ctx context.Context, key string, value []byte, expiration time.Duration) error {
 	fullKey := rc.buildKey(key)
 
 	var cmd string
 	if expiration > 0 {
-		// SET with expiration
+		// 带过期时间的 SET
 		seconds := int(expiration.Seconds())
 		cmd = fmt.Sprintf("SET %s %q EX %d\r\n", fullKey, string(value), seconds)
 	} else {
-		// SET without expiration
+		// 不带过期时间的 SET
 		cmd = fmt.Sprintf("SET %s %q\r\n", fullKey, string(value))
 	}
 
@@ -142,7 +142,7 @@ func (rc *RedisCache) SetRaw(ctx context.Context, key string, value []byte, expi
 		return fmt.Errorf("failed to send SET command: %w", err)
 	}
 
-	// Read response
+	// 读取响应
 	response, err := rc.readResponse()
 	if err != nil {
 		return err
@@ -155,7 +155,7 @@ func (rc *RedisCache) SetRaw(ctx context.Context, key string, value []byte, expi
 	return nil
 }
 
-// Remove removes data from Redis
+// Remove 从 Redis 移除数据
 func (rc *RedisCache) Remove(ctx context.Context, key string) error {
 	fullKey := rc.buildKey(key)
 
@@ -164,7 +164,7 @@ func (rc *RedisCache) Remove(ctx context.Context, key string) error {
 		return fmt.Errorf("failed to send DEL command: %w", err)
 	}
 
-	// Read response (we don't need to check the result for DEL)
+	// 读取响应 (we don't need to check the result for DEL)
 	_, err := rc.readResponse()
 	return err
 }
@@ -173,7 +173,7 @@ func (rc *RedisCache) Remove(ctx context.Context, key string) error {
 func (rc *RedisCache) RemoveByPattern(ctx context.Context, pattern string) error {
 	fullPattern := rc.buildKey(pattern)
 
-	// First, get all matching keys using KEYS command
+	// 首先，使用 KEYS 命令获取所有匹配的键
 	cmd := fmt.Sprintf("KEYS %s\r\n", fullPattern)
 	if _, err := rc.conn.Write([]byte(cmd)); err != nil {
 		return fmt.Errorf("failed to send KEYS command: %w", err)
@@ -184,15 +184,15 @@ func (rc *RedisCache) RemoveByPattern(ctx context.Context, pattern string) error
 		return err
 	}
 
-	// Parse keys from response and delete them
-	// This is a simplified implementation
+	// 从响应中解析键并删除它们
+	// 这是一个简化的实现
 	if strings.Contains(response, "*0") {
-		// No keys found
+		// 未找到键
 		return nil
 	}
 
-	// In a real implementation, you would parse the array response and delete each key
-	// For now, we'll use FLUSHDB as a simple approach (only if pattern is *)
+	// 在实际实现中，你应该解析数组响应并删除每个键
+	// 现在，我们使用 FLUSHDB 作为简单方法（仅当模式为 * 时）
 	if pattern == "*" {
 		return rc.Clear(ctx)
 	}
@@ -200,7 +200,7 @@ func (rc *RedisCache) RemoveByPattern(ctx context.Context, pattern string) error
 	return nil
 }
 
-// Exists checks if a key exists in Redis
+// Exists 检查键是否存在于 Redis
 func (rc *RedisCache) Exists(ctx context.Context, key string) (bool, error) {
 	fullKey := rc.buildKey(key)
 
@@ -214,11 +214,11 @@ func (rc *RedisCache) Exists(ctx context.Context, key string) (bool, error) {
 		return false, err
 	}
 
-	// Check if response indicates key exists (should be ":1" for exists, ":0" for not exists)
+	// 检查响应是否表示键存在（存在应为 ":1"，不存在为 ":0"）
 	return strings.Contains(response, ":1"), nil
 }
 
-// Clear clears all data in the current database
+// Clear 清空当前数据库中的所有数据
 func (rc *RedisCache) Clear(ctx context.Context) error {
 	cmd := "FLUSHDB\r\n"
 	if _, err := rc.conn.Write([]byte(cmd)); err != nil {
@@ -237,7 +237,7 @@ func (rc *RedisCache) Clear(ctx context.Context) error {
 	return nil
 }
 
-// Close closes the Redis connection
+// Close 关闭 Redis 连接
 func (rc *RedisCache) Close() error {
 	if rc.conn != nil {
 		return rc.conn.Close()
@@ -245,7 +245,7 @@ func (rc *RedisCache) Close() error {
 	return nil
 }
 
-// buildKey builds the full cache key with prefix
+// buildKey 构建带前缀的完整缓存键
 func (rc *RedisCache) buildKey(key string) string {
 	if rc.options.KeyPrefix == "" {
 		return key
@@ -253,7 +253,7 @@ func (rc *RedisCache) buildKey(key string) string {
 	return rc.options.KeyPrefix + ":" + key
 }
 
-// auth authenticates with Redis using the provided password
+// auth 使用提供的密码向 Redis 进行认证
 func (rc *RedisCache) auth() error {
 	cmd := fmt.Sprintf("AUTH %s\r\n", rc.options.Password)
 	if _, err := rc.conn.Write([]byte(cmd)); err != nil {
@@ -272,7 +272,7 @@ func (rc *RedisCache) auth() error {
 	return nil
 }
 
-// selectDB selects the Redis database
+// selectDB 选择 Redis 数据库
 func (rc *RedisCache) selectDB() error {
 	cmd := fmt.Sprintf("SELECT %d\r\n", rc.options.DB)
 	if _, err := rc.conn.Write([]byte(cmd)); err != nil {
@@ -291,15 +291,15 @@ func (rc *RedisCache) selectDB() error {
 	return nil
 }
 
-// readResponse reads a response from Redis
-// Note: This is a very basic Redis protocol parser for demonstration purposes
+// readResponse 从 Redis 读取响应
+// 注意：这是一个用于演示目的的非常基本的 Redis 协议解析器
 func (rc *RedisCache) readResponse() (string, error) {
-	// Set read timeout
+	// 设置读取超时
 	if err := rc.conn.SetReadDeadline(time.Now().Add(rc.options.ReadTimeout)); err != nil {
 		return "", err
 	}
 
-	// Read response (simplified - in production you'd need a proper Redis protocol parser)
+	// 读取响应 (simplified - in production you'd need a proper Redis protocol parser)
 	buffer := make([]byte, 4096)
 	n, err := rc.conn.Read(buffer)
 	if err != nil {
@@ -309,12 +309,12 @@ func (rc *RedisCache) readResponse() (string, error) {
 	return string(buffer[:n]), nil
 }
 
-// MockRedisCache is a mock implementation of Redis cache for testing
+// MockRedisCache 是用于测试的 Redis 缓存模拟实现
 type MockRedisCache struct {
 	data map[string][]byte
 }
 
-// NewMockRedisCache creates a new mock Redis cache for testing
+// NewMockRedisCache 创建一个新的模拟 Redis 缓存用于测试
 func NewMockRedisCache() *MockRedisCache {
 	return &MockRedisCache{
 		data: make(map[string][]byte),
@@ -326,7 +326,7 @@ func (mrc *MockRedisCache) Name() string {
 	return "mock-redis"
 }
 
-// GetRaw retrieves raw data from mock Redis
+// GetRaw 从模拟 Redis 获取原始数据
 func (mrc *MockRedisCache) GetRaw(ctx context.Context, key string) ([]byte, error) {
 	if data, exists := mrc.data[key]; exists {
 		result := make([]byte, len(data))
@@ -336,7 +336,7 @@ func (mrc *MockRedisCache) GetRaw(ctx context.Context, key string) ([]byte, erro
 	return nil, nil
 }
 
-// SetRaw stores raw data in mock Redis
+// SetRaw 将原始数据存储到模拟 Redis
 func (mrc *MockRedisCache) SetRaw(ctx context.Context, key string, value []byte, expiration time.Duration) error {
 	data := make([]byte, len(value))
 	copy(data, value)
@@ -344,13 +344,13 @@ func (mrc *MockRedisCache) SetRaw(ctx context.Context, key string, value []byte,
 	return nil
 }
 
-// Remove removes data from mock Redis
+// Remove 从模拟 Redis 移除数据
 func (mrc *MockRedisCache) Remove(ctx context.Context, key string) error {
 	delete(mrc.data, key)
 	return nil
 }
 
-// RemoveByPattern removes all keys matching the pattern in mock Redis
+// RemoveByPattern 从模拟 Redis 移除所有匹配模式的键
 func (mrc *MockRedisCache) RemoveByPattern(ctx context.Context, pattern string) error {
 	if pattern == "*" {
 		mrc.data = make(map[string][]byte)
@@ -365,19 +365,19 @@ func (mrc *MockRedisCache) RemoveByPattern(ctx context.Context, pattern string) 
 	return nil
 }
 
-// Exists checks if a key exists in mock Redis
+// Exists 检查键是否存在于模拟 Redis
 func (mrc *MockRedisCache) Exists(ctx context.Context, key string) (bool, error) {
 	_, exists := mrc.data[key]
 	return exists, nil
 }
 
-// Clear clears all data in mock Redis
+// Clear 清空模拟 Redis 中的所有数据
 func (mrc *MockRedisCache) Clear(ctx context.Context) error {
 	mrc.data = make(map[string][]byte)
 	return nil
 }
 
-// Close closes the mock Redis cache
+// Close 关闭模拟 Redis 缓存
 func (mrc *MockRedisCache) Close() error {
 	return nil
 }

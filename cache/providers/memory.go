@@ -8,14 +8,14 @@ import (
 	"time"
 )
 
-// MemoryCacheItem represents an item stored in memory cache
+// MemoryCacheItem 表示存储在内存缓存中的项
 type MemoryCacheItem struct {
 	Data       []byte
 	Expiration time.Time
 	LastAccess time.Time
 }
 
-// IsExpired checks if the cache item has expired
+// IsExpired 检查缓存项是否已过期
 func (item *MemoryCacheItem) IsExpired() bool {
 	if item.Expiration.IsZero() {
 		return false
@@ -23,24 +23,24 @@ func (item *MemoryCacheItem) IsExpired() bool {
 	return time.Now().After(item.Expiration)
 }
 
-// Touch updates the last access time
+// Touch 更新最后访问时间
 func (item *MemoryCacheItem) Touch() {
 	item.LastAccess = time.Now()
 }
 
-// MemoryCacheOptions defines options for memory cache
+// MemoryCacheOptions 定义内存缓存的选项
 type MemoryCacheOptions struct {
-	// MaxSize is the maximum number of items to store
+	// MaxSize 是要存储的最大项数
 	MaxSize int64
-	// DefaultExpiration is the default expiration duration
+	// DefaultExpiration 是默认的过期时间
 	DefaultExpiration time.Duration
-	// CleanupInterval is how often expired items are cleaned up
+	// CleanupInterval 是清理过期项的频率
 	CleanupInterval time.Duration
-	// EnableLRU enables LRU eviction when max size is reached
+	// EnableLRU 启用 LRU 驱逐策略（当达到最大大小时）
 	EnableLRU bool
 }
 
-// DefaultMemoryCacheOptions returns default options for memory cache
+// DefaultMemoryCacheOptions 返回内存缓存的默认选项
 func DefaultMemoryCacheOptions() *MemoryCacheOptions {
 	return &MemoryCacheOptions{
 		MaxSize:           10000,
@@ -50,7 +50,7 @@ func DefaultMemoryCacheOptions() *MemoryCacheOptions {
 	}
 }
 
-// MemoryCache implements ICacheProvider using in-memory storage
+// MemoryCache 使用内存存储实现 ICacheProvider 接口
 type MemoryCache struct {
 	mu      sync.RWMutex
 	items   map[string]*MemoryCacheItem
@@ -59,7 +59,7 @@ type MemoryCache struct {
 	stopped bool
 }
 
-// NewMemoryCache creates a new memory cache provider
+// NewMemoryCache 创建一个新的内存缓存提供者
 func NewMemoryCache(options *MemoryCacheOptions) *MemoryCache {
 	if options == nil {
 		options = DefaultMemoryCacheOptions()
@@ -71,18 +71,18 @@ func NewMemoryCache(options *MemoryCacheOptions) *MemoryCache {
 		stopCh:  make(chan struct{}),
 	}
 
-	// Start cleanup goroutine
+	// 启动清理协程
 	go mc.startCleanup()
 
 	return mc
 }
 
-// Name returns the provider name
+// Name 返回提供者名称
 func (mc *MemoryCache) Name() string {
 	return "memory"
 }
 
-// GetRaw retrieves raw data from the cache
+// GetRaw 从缓存中获取原始数据
 func (mc *MemoryCache) GetRaw(ctx context.Context, key string) ([]byte, error) {
 	mc.mu.RLock()
 	defer mc.mu.RUnlock()
@@ -98,21 +98,21 @@ func (mc *MemoryCache) GetRaw(ctx context.Context, key string) ([]byte, error) {
 		return nil, nil
 	}
 
-	// Update last access time for LRU
+	// 更新最后访问时间以支持 LRU
 	item.Touch()
 
-	// Return a copy of the data
+	// 返回数据的副本
 	data := make([]byte, len(item.Data))
 	copy(data, item.Data)
 	return data, nil
 }
 
-// SetRaw stores raw data in the cache
+// SetRaw 将原始数据存储到缓存中
 func (mc *MemoryCache) SetRaw(ctx context.Context, key string, value []byte, expiration time.Duration) error {
 	mc.mu.Lock()
 	defer mc.mu.Unlock()
 
-	// Check if we need to evict items
+	// 检查是否需要驱逐项
 	if int64(len(mc.items)) >= mc.options.MaxSize {
 		if mc.options.EnableLRU {
 			mc.evictLRU()
@@ -121,7 +121,7 @@ func (mc *MemoryCache) SetRaw(ctx context.Context, key string, value []byte, exp
 		}
 	}
 
-	// Calculate expiration time
+	// 计算过期时间
 	var exp time.Time
 	if expiration > 0 {
 		exp = time.Now().Add(expiration)
@@ -129,7 +129,7 @@ func (mc *MemoryCache) SetRaw(ctx context.Context, key string, value []byte, exp
 		exp = time.Now().Add(mc.options.DefaultExpiration)
 	}
 
-	// Store a copy of the data
+	// 存储数据的副本
 	data := make([]byte, len(value))
 	copy(data, value)
 
@@ -142,7 +142,7 @@ func (mc *MemoryCache) SetRaw(ctx context.Context, key string, value []byte, exp
 	return nil
 }
 
-// Remove removes data from the cache
+// Remove 从缓存中移除数据
 func (mc *MemoryCache) Remove(ctx context.Context, key string) error {
 	mc.mu.Lock()
 	defer mc.mu.Unlock()
@@ -151,9 +151,9 @@ func (mc *MemoryCache) Remove(ctx context.Context, key string) error {
 	return nil
 }
 
-// RemoveByPattern removes all keys matching the pattern
+// RemoveByPattern 移除所有匹配模式的键
 func (mc *MemoryCache) RemoveByPattern(ctx context.Context, pattern string) error {
-	// Compile regex pattern
+	// 编译正则表达式模式
 	regex, err := regexp.Compile(pattern)
 	if err != nil {
 		return fmt.Errorf("invalid pattern: %w", err)
@@ -162,7 +162,7 @@ func (mc *MemoryCache) RemoveByPattern(ctx context.Context, pattern string) erro
 	mc.mu.Lock()
 	defer mc.mu.Unlock()
 
-	// Find keys to remove
+	// 查找要移除的键
 	keysToRemove := make([]string, 0)
 	for key := range mc.items {
 		if regex.MatchString(key) {
@@ -170,7 +170,7 @@ func (mc *MemoryCache) RemoveByPattern(ctx context.Context, pattern string) erro
 		}
 	}
 
-	// Remove matched keys
+	// 移除匹配的键
 	for _, key := range keysToRemove {
 		delete(mc.items, key)
 	}
@@ -178,7 +178,7 @@ func (mc *MemoryCache) RemoveByPattern(ctx context.Context, pattern string) erro
 	return nil
 }
 
-// Exists checks if a key exists
+// Exists 检查键是否存在
 func (mc *MemoryCache) Exists(ctx context.Context, key string) (bool, error) {
 	mc.mu.RLock()
 	defer mc.mu.RUnlock()
@@ -197,7 +197,7 @@ func (mc *MemoryCache) Exists(ctx context.Context, key string) (bool, error) {
 	return true, nil
 }
 
-// Clear clears all data
+// Clear 清空所有数据
 func (mc *MemoryCache) Clear(ctx context.Context) error {
 	mc.mu.Lock()
 	defer mc.mu.Unlock()
@@ -206,7 +206,7 @@ func (mc *MemoryCache) Clear(ctx context.Context) error {
 	return nil
 }
 
-// Close closes the provider and releases resources
+// Close 关闭提供者并释放资源
 func (mc *MemoryCache) Close() error {
 	mc.mu.Lock()
 	defer mc.mu.Unlock()
@@ -220,7 +220,7 @@ func (mc *MemoryCache) Close() error {
 	return nil
 }
 
-// GetStats returns cache statistics
+// GetStats 返回缓存统计信息
 func (mc *MemoryCache) GetStats() map[string]interface{} {
 	mc.mu.RLock()
 	defer mc.mu.RUnlock()
@@ -240,11 +240,11 @@ func (mc *MemoryCache) GetStats() map[string]interface{} {
 		"expired_items": expiredCount,
 		"total_size":    totalSize,
 		"max_size":      mc.options.MaxSize,
-		"hit_rate":      0, // Could be implemented with counters
+		"hit_rate":      0, // 可以通过计数器实现
 	}
 }
 
-// startCleanup starts the cleanup goroutine
+// startCleanup 启动清理协程
 func (mc *MemoryCache) startCleanup() {
 	ticker := time.NewTicker(mc.options.CleanupInterval)
 	defer ticker.Stop()
@@ -259,7 +259,7 @@ func (mc *MemoryCache) startCleanup() {
 	}
 }
 
-// cleanup removes expired items
+// cleanup 移除过期的项
 func (mc *MemoryCache) cleanup() {
 	mc.mu.Lock()
 	defer mc.mu.Unlock()
@@ -278,7 +278,7 @@ func (mc *MemoryCache) cleanup() {
 	}
 }
 
-// removeExpiredItem removes a single expired item (called from goroutine)
+// removeExpiredItem 移除单个过期项（从协程调用）
 func (mc *MemoryCache) removeExpiredItem(key string) {
 	mc.mu.Lock()
 	defer mc.mu.Unlock()
@@ -288,7 +288,7 @@ func (mc *MemoryCache) removeExpiredItem(key string) {
 	}
 }
 
-// evictLRU evicts the least recently used item
+// evictLRU 驱逐最近最少使用的项
 func (mc *MemoryCache) evictLRU() {
 	if len(mc.items) == 0 {
 		return
@@ -297,7 +297,7 @@ func (mc *MemoryCache) evictLRU() {
 	var oldestKey string
 	var oldestTime time.Time
 
-	// Find the item with the oldest last access time
+	// 查找最旧的最后访问时间的项
 	for key, item := range mc.items {
 		if oldestKey == "" || item.LastAccess.Before(oldestTime) {
 			oldestKey = key

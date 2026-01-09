@@ -143,13 +143,13 @@ func main() {
 	fmt.Printf("✅ 缓存2数据: %v\n", val2)
 
 	// 测试删除操作
-	fmt.Println("\n6. 测试删除操作:")
-	err = testCache.Delete(ctx, key)
-	if err != nil {
-		log.Printf("删除失败: %v", err)
-	} else {
-		fmt.Println("✅ 成功删除键")
-	}
+	//fmt.Println("\n6. 测试删除操作:")
+	//err = testCache.Delete(ctx, key)
+	//if err != nil {
+	//	log.Printf("删除失败: %v", err)
+	//} else {
+	//	fmt.Println("✅ 成功删除键")
+	//}
 
 	exists, _ = testCache.Exists(ctx, key)
 	fmt.Printf("删除后键是否存在: %v\n", exists)
