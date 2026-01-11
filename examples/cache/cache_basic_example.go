@@ -10,7 +10,7 @@ import (
 	"gitee.com/wangsoft/go-library/cache/serializers"
 )
 
-func main() {
+func main_base() {
 	fmt.Println("=== Cache System 基础示例 ===")
 
 	// 创建缓存管理器

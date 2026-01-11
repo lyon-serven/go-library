@@ -26,6 +26,7 @@ type LogConfig struct {
 	// 性能配置
 	BufferSize   int           `yaml:"buffer_size" json:"buffer_size"`
 	FlushTimeout time.Duration `yaml:"flush_timeout" json:"flush_timeout"`
+	CtxKv        []string
 }
 
 // DefaultConfig 返回默认配置

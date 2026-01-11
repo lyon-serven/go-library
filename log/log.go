@@ -1,6 +1,7 @@
 package log
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -24,6 +25,7 @@ type Logger struct {
 	*zap.Logger
 	config *LogConfig
 	sugar  *zap.SugaredLogger
+	ctxKv  []string // 上下文日志取值key
 }
 
 // NewLogger 创建新的日志器实例
@@ -78,6 +80,7 @@ func NewLogger(config *LogConfig) (*Logger, error) {
 		Logger: zapLogger,
 		config: config,
 		sugar:  zapLogger.Sugar(),
+		ctxKv:  config.CtxKv,
 	}
 
 	return logger, nil
@@ -115,9 +118,26 @@ func (l *Logger) WithFields(fields ...zap.Field) *Logger {
 	}
 }
 
-// WithContext 添加上下文字段
-func (l *Logger) WithContext(key string, value interface{}) *Logger {
+// WithKV 添加键值对字段（便捷方法）
+func (l *Logger) WithKV(key string, value interface{}) *Logger {
 	return l.WithFields(zap.Any(key, value))
+}
+
+// WithKVs 添加多个键值对字段
+func (l *Logger) WithKVs(kvs ...interface{}) *Logger {
+	if len(kvs)%2 != 0 {
+		// 如果参数个数不是偶数，忽略最后一个参数
+		kvs = kvs[:len(kvs)-1]
+	}
+
+	fields := make([]zap.Field, 0, len(kvs)/2)
+	for i := 0; i < len(kvs); i += 2 {
+		if key, ok := kvs[i].(string); ok {
+			fields = append(fields, zap.Any(key, kvs[i+1]))
+		}
+	}
+
+	return l.WithFields(fields...)
 }
 
 // Sync 同步日志
@@ -354,14 +374,30 @@ func Panicf(template string, args ...interface{}) {
 	GetDefault().Sugar().Panicf(template, args...)
 }
 
-// WithField 添加单个字段
-func WithField(key string, value interface{}) *Logger {
-	return GetDefault().WithFields(zap.Any(key, value))
+// InfoK 记录Info级别日志并添加键值对字段
+func (l *Logger) InfoK(msg string, kvs ...interface{}) *Logger {
+	logger := l
+	if len(kvs) > 0 {
+		logger = l.WithKVs(kvs...)
+	}
+	logger.Info(msg)
+	return logger
 }
 
-// WithFields 添加多个字段
-func WithFields(fields ...zap.Field) *Logger {
-	return GetDefault().WithFields(fields...)
+// InfoContextK 记录Info级别日志并添加上下文和键值对字段
+func (l *Logger) InfoContextK(ctx context.Context, msg string, kvs ...interface{}) *Logger {
+	logger := l
+	// 从context中提取常见的字段
+	if ctx != nil && l.ctxKv != nil && len(l.ctxKv) > 0 {
+		for _, k := range l.ctxKv {
+			if v := ctx.Value(k); v != nil {
+				logger = logger.WithKV(k, v)
+			}
+		}
+	}
+
+	logger.Info(msg)
+	return logger
 }
 
 // Sync 同步默认日志器
