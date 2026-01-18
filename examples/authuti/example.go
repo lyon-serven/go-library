@@ -38,11 +38,10 @@ func BaseDemo() {
 func AdvancedDemo() {
 	// 创建自定义配置
 	config := &authutil.TOTPConfig{
-		Issuer:      "MyCompany",
-		AccountName: "user@example.com",
-		Digits:      6,
-		Period:      30,
-		Algorithm:   "sha1",
+		Issuer:    "MyCompany",
+		Digits:    6,
+		Period:    30,
+		Algorithm: "sha1",
 	}
 
 	// 创建Google Authenticator实例
@@ -55,7 +54,7 @@ func AdvancedDemo() {
 	}
 
 	// 生成QR码URL
-	qrURL := ga.GenerateQRCodeImageURL(secret)
+	qrURL := ga.GenerateQRCodeImageURL(secret, "测试account")
 
 	// 验证码（支持时间容差）
 	// 假设用户输入的验证码为 "123456"，实际使用时应从用户输入获取

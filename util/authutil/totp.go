@@ -20,8 +20,6 @@ type TOTPConfig struct {
 	Secret string
 	// Issuer name (e.g., "MyCompany")
 	Issuer string
-	// Account name (e.g., user email)
-	AccountName string
 	// Number of digits in the code (usually 6)
 	Digits int
 	// Time step in seconds (usually 30)
@@ -116,7 +114,7 @@ func (ga *GoogleAuthenticator) VerifyCodeWithTolerance(secret, code string, tole
 }
 
 // GenerateQRCodeURL generates a QR code URL for Google Authenticator
-func (ga *GoogleAuthenticator) GenerateQRCodeURL(secret string) string {
+func (ga *GoogleAuthenticator) GenerateQRCodeURL(secret, accountName string) string {
 	// Build otpauth URL
 	params := url.Values{}
 	params.Set("secret", secret)
@@ -128,7 +126,7 @@ func (ga *GoogleAuthenticator) GenerateQRCodeURL(secret string) string {
 	// Build the otpauth URL
 	otpauthURL := fmt.Sprintf("otpauth://totp/%s:%s?%s",
 		url.QueryEscape(ga.config.Issuer),
-		url.QueryEscape(ga.config.AccountName),
+		url.QueryEscape(accountName),
 		params.Encode())
 
 	return otpauthURL
@@ -136,8 +134,8 @@ func (ga *GoogleAuthenticator) GenerateQRCodeURL(secret string) string {
 
 // GenerateQRCodeImageURL generates a URL to display QR code image via Google Charts API
 // Note: Google Charts API requires VPN access in China
-func (ga *GoogleAuthenticator) GenerateQRCodeImageURL(secret string) string {
-	otpauthURL := ga.GenerateQRCodeURL(secret)
+func (ga *GoogleAuthenticator) GenerateQRCodeImageURL(secret, accountName string) string {
+	otpauthURL := ga.GenerateQRCodeURL(secret, accountName)
 
 	// Use Google Charts API to generate QR code image (需要翻墙)
 	qrURL := fmt.Sprintf("https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl=%s",
@@ -148,8 +146,8 @@ func (ga *GoogleAuthenticator) GenerateQRCodeImageURL(secret string) string {
 
 // GenerateQRCodeImageURLCN generates a QR code image URL using Chinese accessible APIs
 // 使用国内可访问的二维码生成API（多个备选方案）
-func (ga *GoogleAuthenticator) GenerateQRCodeImageURLCN(secret string) string {
-	otpauthURL := ga.GenerateQRCodeURL(secret)
+func (ga *GoogleAuthenticator) GenerateQRCodeImageURLCN(secret, accountName string) string {
+	otpauthURL := ga.GenerateQRCodeURL(secret, accountName)
 
 	// 方案1: 使用QR Server API (国内可访问，免费)
 	// qrURL := fmt.Sprintf("https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=%s",
@@ -169,8 +167,8 @@ func (ga *GoogleAuthenticator) GenerateQRCodeImageURLCN(secret string) string {
 
 // GetOtpauthURL returns the raw otpauth:// URL for manual QR code generation
 // 返回原始的 otpauth:// URL，可用于本地生成二维码
-func (ga *GoogleAuthenticator) GetOtpauthURL(secret string) string {
-	return ga.GenerateQRCodeURL(secret)
+func (ga *GoogleAuthenticator) GetOtpauthURL(secret, accountName string) string {
+	return ga.GenerateQRCodeURL(secret, accountName)
 }
 
 // generateHOTP generates HOTP value based on RFC 4226
@@ -291,11 +289,30 @@ func (tm *TOTPManager) SetupUser(userID, accountName string) (string, string, er
 	// Store secret
 	tm.secrets[userID] = secret
 
-	// Update account name
-	tm.ga.config.AccountName = accountName
+	// Generate QR code URL (不再修改共享的config)
+	qrURL := tm.ga.GenerateQRCodeImageURL(secret, accountName)
+
+	return secret, qrURL, nil
+}
+
+// SetupUserWithPwd sets up TOTP for a user with external provided secret
+func (tm *TOTPManager) SetupUserWithPwd(userID, accountName, secret string) (string, string, error) {
+	// Validate the provided secret
+	if secret == "" {
+		return "", "", fmt.Errorf("secret cannot be empty")
+	}
+
+	// Validate secret format (should be base32 encoded)
+	_, err := base32.StdEncoding.WithPadding(base32.NoPadding).DecodeString(secret)
+	if err != nil {
+		return "", "", fmt.Errorf("invalid secret format: %w", err)
+	}
+
+	// Store secret
+	tm.secrets[userID] = secret
 
 	// Generate QR code URL
-	qrURL := tm.ga.GenerateQRCodeImageURL(secret)
+	qrURL := tm.ga.GenerateQRCodeImageURL(secret, accountName)
 
 	return secret, qrURL, nil
 }
@@ -328,7 +345,6 @@ func (tm *TOTPManager) RemoveUser(userID string) {
 func QuickGenerate(issuer, accountName string) (secret, qrCodeURL string, err error) {
 	config := DefaultTOTPConfig()
 	config.Issuer = issuer
-	config.AccountName = accountName
 
 	ga := NewGoogleAuthenticator(config)
 
@@ -337,7 +353,7 @@ func QuickGenerate(issuer, accountName string) (secret, qrCodeURL string, err er
 		return "", "", err
 	}
 
-	qrCodeURL = ga.GenerateQRCodeImageURLCN(secret)
+	qrCodeURL = ga.GenerateQRCodeImageURLCN(secret, accountName)
 	return secret, qrCodeURL, nil
 }
 
