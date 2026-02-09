@@ -11,7 +11,7 @@ import (
 	"gitee.com/wangsoft/go-library/cache/serializers"
 )
 
-func main() {
+func main2() {
 	fmt.Println("=== Cache 便捷方法使用示例 ===\n")
 
 	// 初始化缓存
@@ -246,13 +246,6 @@ func main() {
 
 func ptrDuration(d time.Duration) *time.Duration {
 	return &d
-}
-
-// User 用户模型
-type User struct {
-	ID    int
-	Name  string
-	Email string
 }
 
 // UserService 用户服务（演示 K() 函数的实际用法）

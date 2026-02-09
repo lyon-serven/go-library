@@ -13,10 +13,10 @@ import (
 
 // User represents a sample data structure
 type User struct {
-	ID       int
-	Username string
-	Email    string
-	Created  time.Time
+	ID      int
+	Name    string
+	Email   string
+	Created time.Time
 }
 
 // DatabaseLoader simulates loading user from database
@@ -28,10 +28,10 @@ func loadUserFromDatabase(ctx context.Context, key string) ([]byte, error) {
 
 	// Simulate user data
 	user := User{
-		ID:       123,
-		Username: "john_doe",
-		Email:    "john@example.com",
-		Created:  time.Now(),
+		ID:      123,
+		Name:    "john_doe",
+		Email:   "john@example.com",
+		Created: time.Now(),
 	}
 
 	// Serialize user
