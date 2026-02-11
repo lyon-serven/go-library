@@ -65,18 +65,18 @@ func (c *cacheExtWrapper) RefreshS(ctx context.Context, key string) error {
 //	user, err := userCache.Get(ctx, "1")           // 直接用字符串键
 //	user, err := userCache.GetOrSet(ctx, "2", loadUser, nil)
 type TypedCacheExt[T any] struct {
-	cache ICache
+	cache *Cache
 }
 
 // NewTypedCacheExt 创建一个类型化的缓存扩展包装器
 // 相比 TypedCache，这个版本的所有方法都直接使用字符串键，更加便捷
-func NewTypedCacheExt[T any](cache ICache) *TypedCacheExt[T] {
+func NewTypedCacheExt[T any](cache *Cache) *TypedCacheExt[T] {
 	return &TypedCacheExt[T]{cache: cache}
 }
 
 // Get 使用字符串键获取值，返回类型 T
 func (tc *TypedCacheExt[T]) Get(ctx context.Context, key string) (*T, error) {
-	return GetTyped[T](ctx, tc.cache, K(key))
+	return GetTypedS[T](ctx, tc.cache, key)
 }
 
 // Set 使用字符串键设置值
@@ -86,7 +86,7 @@ func (tc *TypedCacheExt[T]) Set(ctx context.Context, key string, value *T, optio
 
 // GetOrSet 使用字符串键从缓存获取或设置值
 func (tc *TypedCacheExt[T]) GetOrSet(ctx context.Context, key string, factory func() (*T, error), options *CacheOptions) (*T, error) {
-	return GetOrSetTyped[T](ctx, tc.cache, K(key), factory, options)
+	return GetOrSetTypedS[T](ctx, tc.cache, key, factory, options)
 }
 
 // Remove 使用字符串键删除值
