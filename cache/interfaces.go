@@ -81,8 +81,12 @@ const (
 
 // ICache 定义主要的缓存接口
 type ICache interface {
-	// Get 从缓存中获取值
+	// Get 从缓存中获取值（返回 interface{}，JSON 序列化时会是 map[string]interface{}）
 	Get(ctx context.Context, key CacheKey) (interface{}, error)
+
+	// GetAs 从缓存中获取值并反序列化到指定类型的目标对象
+	// 使用示例：var user User; err := cache.GetAs(ctx, key, &user)
+	GetAs(ctx context.Context, key CacheKey, target interface{}) error
 
 	// GetAsync 异步从缓存中获取值
 	GetAsync(ctx context.Context, key CacheKey) <-chan CacheResult
@@ -108,6 +112,10 @@ type ICache interface {
 	// GetOrSet 从缓存获取值，如果不存在则使用工厂函数设置
 	GetOrSet(ctx context.Context, key CacheKey, factory func() (interface{}, error), options *CacheOptions) (interface{}, error)
 
+	// GetOrSetAs 类型安全的 GetOrSet，将值反序列化到指定类型的目标对象
+	// 使用示例：var user User; err := cache.GetOrSetAs(ctx, key, &user, factory, options)
+	GetOrSetAs(ctx context.Context, key CacheKey, target interface{}, factory func() (interface{}, error), options *CacheOptions) error
+
 	// Refresh 刷新缓存项的过期时间
 	Refresh(ctx context.Context, key CacheKey) error
 }
@@ -118,6 +126,9 @@ type ICacheExt interface {
 
 	// GetS 使用字符串键从缓存中获取值
 	GetS(ctx context.Context, key string) (interface{}, error)
+
+	// GetAsS 使用字符串键从缓存中获取值并反序列化到指定类型
+	GetAsS(ctx context.Context, key string, target interface{}) error
 
 	// SetS 使用字符串键将值存储到缓存中
 	SetS(ctx context.Context, key string, value interface{}, options *CacheOptions) error
@@ -130,6 +141,9 @@ type ICacheExt interface {
 
 	// GetOrSetS 使用字符串键从缓存获取值，如果不存在则使用工厂函数设置
 	GetOrSetS(ctx context.Context, key string, factory func() (interface{}, error), options *CacheOptions) (interface{}, error)
+
+	// GetOrSetAsS 使用字符串键的类型安全 GetOrSet
+	GetOrSetAsS(ctx context.Context, key string, target interface{}, factory func() (interface{}, error), options *CacheOptions) error
 
 	// RefreshS 使用字符串键刷新缓存项的过期时间
 	RefreshS(ctx context.Context, key string) error

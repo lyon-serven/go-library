@@ -2,6 +2,76 @@
 
 基于依赖注入的缓存管理系统设计理念，支持多种缓存提供程序和序列化方式。
 
+## ⭐ 重要：类型安全问题与解决方案
+
+### ❓ 常见问题
+
+> "为什么我 Set 存入一个 struct，但 Get 返回的是 map[string]interface{}？"
+
+```go
+// 存入 User 结构体
+cache.Set(ctx, key, &User{ID: 1, Name: "张三"}, nil)
+
+// ❌ 获取时变成了 map[string]interface{}
+value, _ := cache.Get(ctx, key)
+fmt.Printf("%T\n", value)  // map[string]interface {}
+```
+
+**原因**：JSON 序列化时会丢失类型信息，反序列化到 `interface{}` 时只能根据 JSON 结构推断类型。
+
+📖 **详细解释**：查看 [WHY_TYPE_LOST.md](./WHY_TYPE_LOST.md) 或 [简明版](./WHY_TYPE_LOST_简明版.md)
+
+### ✅ 解决方案（四选一）
+
+#### 方案 1: GetAs（兼容所有 Go 版本）
+
+```go
+var user User
+err := cache.GetAs(ctx, cache.K("user:1"), &user)
+// user 现在是正确的 User 类型
+```
+
+#### 方案 2: GetTyped 泛型（Go 1.18+）
+
+```go
+// ✅ 直接返回正确类型，无需预创建对象
+user, err := cache.GetTyped[User](ctx, cache, cache.K("user:1"))
+fmt.Printf("用户: %s, 年龄: %d\n", user.Name, user.Age)
+```
+
+#### 方案 3: TypedCache 类型化包装器（Go 1.18+）
+
+```go
+// 创建类型化的用户缓存
+userCache := cache.NewTypedCache[User](baseCache)
+
+// 所有操作都是类型安全的
+user, _ := userCache.Get(ctx, cache.K("1"))
+user, _ := userCache.GetOrSet(ctx, cache.K("2"), loadUser, nil)
+```
+
+#### 方案 4: TypedCacheExt - 最便捷方案（Go 1.18+）⭐⭐⭐
+
+```go
+// 创建类型化的用户缓存（直接用字符串键）
+userCache := cache.NewTypedCacheExt[User](baseCache)
+
+// 🚀 直接使用字符串键，无需 cache.K()
+user, _ := userCache.Get(ctx, "user:1")  // 最简洁！
+user, _ := userCache.GetOrSet(ctx, "user:2", loadUser, nil)
+```
+
+**TypedCacheExt 是最推荐的方案**：类型安全 + 字符串键 + 最简洁的 API
+
+📖 **详细说明**：查看 [TYPED_CACHE_EXT.md](./TYPED_CACHE_EXT.md)
+
+📖 **完整文档**：
+- [类型安全完整解决方案](./TYPE_SAFE_FINAL.md)
+- [快速参考](./QUICK_REFERENCE.md)
+- [为什么类型会丢失](./WHY_TYPE_LOST.md)
+
+---
+
 ## ✨ 新特性：便捷的键使用方式
 
 ### 🔑 三种使用方式
