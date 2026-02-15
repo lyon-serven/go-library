@@ -19,60 +19,70 @@ fmt.Printf("%T\n", value)  // map[string]interface {}
 
 **原因**：JSON 序列化时会丢失类型信息，反序列化到 `interface{}` 时只能根据 JSON 结构推断类型。
 
-📖 **详细解释**：查看 [WHY_TYPE_LOST.md](./WHY_TYPE_LOST.md) 或 [简明版](./WHY_TYPE_LOST_简明版.md)
+### ✅ 解决方案：使用 GetAs
 
-### ✅ 解决方案（四选一）
+**推荐方式：直接传入指针参数**
 
-#### 方案 1: GetAs（兼容所有 Go 版本）
+```go
+// 1. 存储数据
+cache.Set(ctx, cache.K("user:1"), &User{ID: 1, Name: "张三"}, nil)
+
+// 2. 获取时传入指针
+var user User
+err := cache.GetAs(ctx, cache.K("user:1"), &user)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Printf("用户: %s (ID: %d)\n", user.Name, user.ID)
+```
+
+**使用字符串键：**
 
 ```go
 var user User
-err := cache.GetAs(ctx, cache.K("user:1"), &user)
-// user 现在是正确的 User 类型
+err := cache.GetAsS(ctx, "user:1", &user)
 ```
 
-#### 方案 2: GetTyped 泛型（Go 1.18+）
+**GetOrSet 模式：**
 
 ```go
-// ✅ 直接返回正确类型，无需预创建对象
-user, err := cache.GetTyped[User](ctx, cache, cache.K("user:1"))
-fmt.Printf("用户: %s, 年龄: %d\n", user.Name, user.Age)
+var user User
+err := cache.GetOrSetAs(ctx, cache.K("user:1"), &user, func() (interface{}, error) {
+    return loadUserFromDB(1)
+}, nil)
 ```
 
-#### 方案 3: TypedCache 类型化包装器（Go 1.18+）
+**优点：**
+- ✅ 简单直接，无需泛型
+- ✅ 兼容所有 Go 版本
+- ✅ 类型安全
+- ✅ 一个 Cache 可以存储多种类型
+
+### 💡 实际使用示例
 
 ```go
-// 创建类型化的用户缓存
-userCache := cache.NewTypedCache[User](baseCache)
+// 一个 Cache 存储多种类型
+cache := manager.GetCache("default")
 
-// 所有操作都是类型安全的
-user, _ := userCache.Get(ctx, cache.K("1"))
-user, _ := userCache.GetOrSet(ctx, cache.K("2"), loadUser, nil)
+// 存储不同类型
+cache.Set(ctx, cache.K("user:1"), &User{ID: 1, Name: "张三"}, nil)
+cache.Set(ctx, cache.K("product:1"), &Product{ID: 1, Name: "商品"}, nil)
+cache.Set(ctx, cache.K("order:1"), &Order{ID: 1, Total: 100}, nil)
+
+// 获取时指定类型
+var user User
+cache.GetAs(ctx, cache.K("user:1"), &user)
+
+var product Product
+cache.GetAs(ctx, cache.K("product:1"), &product)
+
+var order Order
+cache.GetAs(ctx, cache.K("order:1"), &order)
 ```
-
-#### 方案 4: TypedCacheExt - 最便捷方案（Go 1.18+）⭐⭐⭐
-
-```go
-// 创建类型化的用户缓存（直接用字符串键）
-userCache := cache.NewTypedCacheExt[User](baseCache)
-
-// 🚀 直接使用字符串键，无需 cache.K()
-user, _ := userCache.Get(ctx, "user:1")  // 最简洁！
-user, _ := userCache.GetOrSet(ctx, "user:2", loadUser, nil)
-```
-
-**TypedCacheExt 是最推荐的方案**：类型安全 + 字符串键 + 最简洁的 API
-
-📖 **详细说明**：查看 [TYPED_CACHE_EXT.md](./TYPED_CACHE_EXT.md)
-
-📖 **完整文档**：
-- [类型安全完整解决方案](./TYPE_SAFE_FINAL.md)
-- [快速参考](./QUICK_REFERENCE.md)
-- [为什么类型会丢失](./WHY_TYPE_LOST.md)
 
 ---
 
-## ✨ 新特性：便捷的键使用方式
+## ✨ 便捷的键使用方式
 
 ### 🔑 三种使用方式
 
@@ -103,8 +113,6 @@ extCache.SetS(ctx, "user:123", value, nil)
 key := cache.NewCacheKey("123", "users")
 cache.Get(ctx, key)
 ```
-
-📖 **详细使用指南**：查看 [USAGE_GUIDE.md](./USAGE_GUIDE.md)
 
 ---
 
@@ -155,7 +163,6 @@ options := &providers.MemoryCacheOptions{
     EnableLRU:         true,                    // 启用LRU淘汰
 }
 memoryCache := providers.NewMemoryCache(options)
-```
 ```
 
 **特性:**
@@ -262,29 +269,31 @@ func main() {
     key := cache.NewCacheKey("user:123", "users")
   
     // 存储数据
-    user := map[string]interface{}{
-        "id":   123,
-        "name": "John Doe",
-        "email": "john@example.com",
+    user := &User{
+        ID:   123,
+        Name: "John Doe",
+        Email: "john@example.com",
     }
   
     options := cache.DefaultCacheOptions().WithSlidingExpiration(time.Hour)
     err := myCache.Set(ctx, key, user, options)
   
-    // 读取数据
-    value, err := myCache.Get(ctx, key)
-    if err == nil && value != nil {
-        fmt.Printf("User: %+v\n", value)
+    // 读取数据 - 使用 GetAs
+    var retrievedUser User
+    err = myCache.GetAs(ctx, key, &retrievedUser)
+    if err == nil {
+        fmt.Printf("User: %+v\n", retrievedUser)
     }
 }
 ```
 
 ### 高级模式
 
-#### 1. GetOrSet 模式 (缓存穿透保护)
+#### 1. GetOrSetAs 模式 (缓存穿透保护)
 
 ```go
-result, err := myCache.GetOrSet(ctx, key, func() (interface{}, error) {
+var user User
+err := myCache.GetOrSetAs(ctx, key, &user, func() (interface{}, error) {
     // 这里执行昂贵的操作（如数据库查询）
     return fetchUserFromDatabase(userID), nil
 }, options)
@@ -384,7 +393,8 @@ configKey := cache.NewCacheKey("app_config", "configuration")
 ### 2. 错误处理
 
 ```go
-value, err := myCache.Get(ctx, key)
+var user User
+err := myCache.GetAs(ctx, key, &user)
 if err != nil {
     log.Printf("Cache error: %v", err)
     // 降级到原始数据源
@@ -400,7 +410,8 @@ func warmUpCache(cache cache.ICache) error {
     commonKeys := []string{"config", "menu", "permissions"}
   
     for _, key := range commonKeys {
-        cache.GetOrSet(ctx, cache.NewCacheKey(key, "system"), func() (interface{}, error) {
+        var data interface{}
+        cache.GetOrSetAs(ctx, cache.NewCacheKey(key, "system"), &data, func() (interface{}, error) {
             return loadSystemData(key), nil
         }, nil)
     }
