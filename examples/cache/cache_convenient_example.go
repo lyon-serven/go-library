@@ -11,8 +11,16 @@ import (
 	"gitee.com/wangsoft/go-library/cache/serializers"
 )
 
+// User 用户结构体
+type User struct {
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
 func main2() {
-	fmt.Println("=== Cache 便捷方法使用示例 ===\n")
+	fmt.Println("=== Cache 便捷方法使用示例 ===")
+	fmt.Println()
 
 	// 初始化缓存
 	manager := cache.NewCacheManager()

@@ -9,7 +9,6 @@ import (
 )
 
 func main() {
-	mainRedis()
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
@@ -32,7 +31,8 @@ func main() {
 		fmt.Println()
 		switch option {
 		case 1:
-			main_base()
+			logDemo1()
+			logDemo2()
 		case 2:
 			main2()
 		default:
@@ -47,19 +47,19 @@ func main() {
 
 func showMenu() {
 	fmt.Println("╔═══════════════════════════════════════════════════════════╗")
-	fmt.Println("║           Cache 示例程序选择菜单                          ║")
+	fmt.Println("║           Log 示例程序选择菜单                            ║")
 	fmt.Println("╠═══════════════════════════════════════════════════════════╣")
-	fmt.Println("║  1. Cache 基础示例 (main_base)                            ║")
-	fmt.Println("║     - 基本的 Set/Get 操作                                 ║")
-	fmt.Println("║     - Exists 检查                                         ║")
-	fmt.Println("║     - GetOrSet 模式                                       ║")
-	fmt.Println("║     - 多序列化器支持                                      ║")
-	fmt.Println("║     - 多缓存实例                                          ║")
+	fmt.Println("║  1. 基础日志示例 (example.go)                              ║")
+	fmt.Println("║     - 默认日志器使用                                      ║")
+	fmt.Println("║     - 带字段的日志                                        ║")
+	fmt.Println("║     - 自定义配置                                          ║")
+	fmt.Println("║     - 多日志任务                                          ║")
 	fmt.Println("║                                                           ║")
-	fmt.Println("║  2. 便捷方法示例 (main2)                                   ║")
-	fmt.Println("║     - 使用 K() 和 NK() 快捷函数                           ║")
-	fmt.Println("║     - 使用字符串方法 (SetS/GetS)                          ║")
-	fmt.Println("║     - 显式创建 CacheKey                                   ║")
-	fmt.Println("║     - 实际业务示例 - UserService                          ║")
+	fmt.Println("║  2. 环境服务示例 (env_service_example.go)                  ║")
+	fmt.Println("║     - 开发环境 - 用户平台                                 ║")
+	fmt.Println("║     - 生产环境 - 订单系统                                 ║")
+	fmt.Println("║     - 测试环境 - 支付平台                                 ║")
+	fmt.Println("║     - YAML 配置文件加载                                   ║")
+	fmt.Println("║     - 默认日志器初始化                                    ║")
 	fmt.Println("╚═══════════════════════════════════════════════════════════╝")
 }

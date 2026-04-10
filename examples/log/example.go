@@ -7,7 +7,7 @@ import (
 	"gitee.com/wangsoft/go-library/log"
 )
 
-func main() {
+func main_log() {
 	logTask()
 	logTask2()
 }
@@ -17,7 +17,7 @@ func logDemo1() {
 	log.Errorf("测试错误日志: %s", "这是一个测试错误")
 
 	// 测试带字段的日志
-	log.WithField("user_id", 123).Info("用户操作")
+	//log.InfoK("用户操作", "user_id", 123)
 
 	// 测试自定义配置
 	config := log.DefaultConfig()
@@ -42,7 +42,7 @@ func logDemo2() {
 	log.Errorf("发生错误: %v", fmt.Errorf("111"))
 
 	// 带字段
-	log.WithField("user_id", 123).Info("用户登录")
+	//log.InfoK("用户登录", "user_id", 123)
 
 	// 自定义配置
 	config := log.DefaultConfig()

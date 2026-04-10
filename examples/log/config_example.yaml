@@ -1,0 +1,107 @@
+# 日志配置示例
+
+# 开发环境配置
+dev:
+  log:
+    environment: dev
+    system_name: user-platform
+    level: debug
+    log_to_stdout: true
+    log_to_file: true
+    path: ./logs/dev
+    file_name: user-platform.log
+    rotation_time: 24h
+    file_age: 168h  # 7天
+    max_size: 100
+    max_backups: 10
+    format: console  # 开发环境使用 console 格式，便于阅读
+    enable_caller: true
+    enable_stack: true
+
+# 测试环境配置
+test:
+  log:
+    environment: test
+    system_name: user-platform
+    level: info
+    log_to_stdout: true
+    log_to_file: true
+    path: ./logs/test
+    file_name: user-platform.log
+    rotation_time: 24h
+    file_age: 168h
+    max_size: 100
+    max_backups: 10
+    format: json
+    enable_caller: true
+    enable_stack: true
+
+# 生产环境配置
+prod:
+  log:
+    environment: prod
+    system_name: user-platform
+    level: info
+    log_to_stdout: false  # 生产环境不输出到控制台
+    log_to_file: true
+    path: /var/log/myapp
+    file_name: user-platform.log
+    rotation_time: 1h  # 每小时轮转
+    file_age: 720h  # 保留30天
+    max_size: 500
+    max_backups: 100
+    format: json  # 生产环境使用 JSON 格式，便于日志聚合
+    enable_caller: true
+    enable_stack: true
+    buffer_size: 262144  # 256KB 缓冲
+    flush_timeout: 5s
+
+# 多系统配置示例
+systems:
+  # API 网关
+  api-gateway:
+    environment: prod
+    system_name: api-gateway
+    level: info
+    log_to_stdout: false
+    log_to_file: true
+    path: /var/log/myapp
+    file_name: api-gateway.log
+    rotation_time: 1h
+    format: json
+
+  # 用户平台
+  user-platform:
+    environment: prod
+    system_name: user-platform
+    level: info
+    log_to_stdout: false
+    log_to_file: true
+    path: /var/log/myapp
+    file_name: user-platform.log
+    rotation_time: 1h
+    format: json
+
+  # 订单系统
+  order-system:
+    environment: prod
+    system_name: order-system
+    level: info
+    log_to_stdout: false
+    log_to_file: true
+    path: /var/log/myapp
+    file_name: order-system.log
+    rotation_time: 1h
+    format: json
+
+  # 支付平台
+  payment-platform:
+    environment: prod
+    system_name: payment-platform
+    level: info
+    log_to_stdout: false
+    log_to_file: true
+    path: /var/log/myapp
+    file_name: payment-platform.log
+    rotation_time: 1h
+    format: json

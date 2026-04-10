@@ -76,6 +76,20 @@ func NewLogger(config *LogConfig) (*Logger, error) {
 	// 创建 zap logger
 	zapLogger := zap.New(core, options...)
 
+	// 添加全局字段
+	globalFields := make([]zap.Field, 0, 2)
+	if config.Environment != "" {
+		globalFields = append(globalFields, zap.String("env", config.Environment))
+	}
+	if config.SystemName != "" {
+		globalFields = append(globalFields, zap.String("system", config.SystemName))
+	}
+
+	// 如果有全局字段，添加到 logger
+	if len(globalFields) > 0 {
+		zapLogger = zapLogger.With(globalFields...)
+	}
+
 	logger := &Logger{
 		Logger: zapLogger,
 		config: config,

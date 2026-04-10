@@ -9,6 +9,10 @@ type LogConfig struct {
 	LogToFile   bool   `yaml:"log_to_file" json:"log_to_file"`
 	Level       string `yaml:"level" json:"level"`
 
+	// 全局字段配置
+	Environment string `yaml:"environment" json:"environment"` // 环境：dev, test, prod
+	SystemName  string `yaml:"system_name" json:"system_name"` // 系统名/平台名：user-platform, order-system
+
 	// 文件配置
 	Path         string        `yaml:"path" json:"path"`
 	FileName     string        `yaml:"file_name" json:"file_name"`
@@ -35,6 +39,8 @@ func DefaultConfig() *LogConfig {
 		LogToStdout:  true,
 		LogToFile:    true,
 		Level:        "info",
+		Environment:  "dev", // 默认开发环境
+		SystemName:   "app", // 默认系统名
 		Path:         "./logs",
 		FileName:     "app.log",
 		FilePattern:  ".%Y%m%d%H%M", // 默认时间格式
