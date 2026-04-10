@@ -206,6 +206,26 @@ func (mc *MemoryCache) Clear(ctx context.Context) error {
 	return nil
 }
 
+// PipelineSet 批量写入多个键值对（内存模式无需 Pipeline，逐个写入即可）
+func (mc *MemoryCache) PipelineSet(ctx context.Context, items []PipelineSetItem) error {
+	for _, item := range items {
+		if err := mc.SetRaw(ctx, item.Key, item.Value, item.Expiration); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// PipelineRemove 批量删除多个键（内存模式无需 Pipeline，逐个删除即可）
+func (mc *MemoryCache) PipelineRemove(ctx context.Context, keys []string) error {
+	for _, key := range keys {
+		if err := mc.Remove(ctx, key); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Close 关闭提供者并释放资源
 func (mc *MemoryCache) Close() error {
 	mc.mu.Lock()

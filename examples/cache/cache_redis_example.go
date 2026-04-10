@@ -39,14 +39,28 @@ func mainRedis() {
 	fmt.Println("1. 初始化 Redis Provider")
 
 	redisProvider, err := providers.NewRedisCache(&providers.RedisOptions{
-		Addresses:    []string{"172.24.140.239:6379"},
-		Password:     "Zc2hmmeOpEjD",  // 无密码留空
-		DB:           0,               // 使用默认 DB
-		PoolSize:     10,              // 连接池大小
-		DialTimeout:  5 * time.Second, // 连接超时
-		ReadTimeout:  3 * time.Second, // 读取超时
-		WriteTimeout: 3 * time.Second, // 写入超时
-		KeyPrefix:    "go-library",    // 键前缀，避免与其他应用冲突
+		Addresses:            []string{"172.24.140.239:6379"},
+		Password:             "Zc2hmmeOpEjD",         // 无密码留空
+		DB:                   0,                      // 使用默认 DB
+		PoolSize:             10,                     // 连接池大小
+		DialTimeout:          5 * time.Second,        // 连接超时
+		ReadTimeout:          3 * time.Second,        // 读取超时
+		WriteTimeout:         3 * time.Second,        // 写入超时
+		KeyPrefix:            "go-library",           // 键前缀，避免与其他应用冲突
+		EnableHealthCheck:    true,                   // 开启心跳监测
+		HealthCheckInterval:  30 * time.Second,       // 心跳检测间隔
+		HealthCheckTimeout:   3 * time.Second,        // 单次 Ping 超时
+		LatencyWarnThreshold: 200 * time.Millisecond, // 延迟告警阈值
+		OnAlert: func(event providers.AlertEvent) {
+			switch event.Level {
+			case providers.AlertLevelWarn:
+				log.Printf("⚠️ Redis 延迟过高: %v (延迟: %v)", event.Message, event.Latency)
+			case providers.AlertLevelError:
+				log.Printf("❌ Redis 连接错误: %v", event.Err)
+			case providers.AlertLevelRecover:
+				log.Printf("✅ Redis 连接恢复: %v", event.Message)
+			}
+		},
 	})
 	if err != nil {
 		log.Fatal("❌ 连接 Redis 失败:", err)

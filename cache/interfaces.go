@@ -182,6 +182,32 @@ type ICacheProvider interface {
 	Close() error
 }
 
+// PipelineRawItem 表示 Pipeline Provider 层的单个批量操作条目（已序列化的原始数据）
+type PipelineRawItem struct {
+	Key        string
+	Value      []byte
+	Expiration time.Duration
+}
+
+// IPipelineProvider 定义支持 Pipeline 批量操作的缓存提供者扩展接口
+// 只有支持 Pipeline 的 Provider（如 Redis）才需要实现此接口
+type IPipelineProvider interface {
+	// PipelineSet 批量写入多个键值对（使用 Pipeline，减少网络往返）
+	PipelineSet(ctx context.Context, items []PipelineRawItem) error
+
+	// PipelineRemove 批量删除多个键（使用 Pipeline，减少网络往返）
+	PipelineRemove(ctx context.Context, keys []string) error
+}
+
+// IHealthCheckable 定义支持心跳监测的提供者扩展接口
+type IHealthCheckable interface {
+	// Ping 检测连接是否正常，返回延迟时间
+	Ping(ctx context.Context) (time.Duration, error)
+
+	// IsHealthy 返回当前连接是否健康
+	IsHealthy() bool
+}
+
 // ICacheSerializer 定义缓存序列化器的接口
 type ICacheSerializer interface {
 	// Serialize 将对象转换为字节数组

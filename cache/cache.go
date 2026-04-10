@@ -220,6 +220,101 @@ func (c *Cache) RefreshS(ctx context.Context, key string) error {
 }
 
 // ============================================
+// Pipeline 批量操作
+// ============================================
+
+// PipelineItem 高层 Pipeline 批量写入条目（包含 CacheKey + 未序列化的 Value）
+type PipelineItem struct {
+	Key        CacheKey
+	Value      interface{}
+	Expiration time.Duration
+}
+
+// PipelineSet 批量序列化并写入多个键值对
+// 底层会检查 Provider 是否实现了 IPipelineProvider，是则使用 Pipeline，否则逐个写入
+//
+// 示例：
+//
+//	err := myCache.PipelineSet(ctx, []cache.PipelineItem{
+//	    {Key: cache.K("user:1"), Value: &user1, Expiration: 5 * time.Minute},
+//	    {Key: cache.K("user:2"), Value: &user2, Expiration: 5 * time.Minute},
+//	})
+func (c *Cache) PipelineSet(ctx context.Context, items []PipelineItem) error {
+	if len(items) == 0 {
+		return nil
+	}
+
+	// 序列化所有 item → PipelineRawItem
+	rawItems := make([]PipelineRawItem, 0, len(items))
+	for _, item := range items {
+		data, err := c.serializer.Serialize(item.Value)
+		if err != nil {
+			return fmt.Errorf("pipeline set: failed to serialize key '%s': %w", item.Key.String(), err)
+		}
+		rawItems = append(rawItems, PipelineRawItem{
+			Key:        item.Key.String(),
+			Value:      data,
+			Expiration: item.Expiration,
+		})
+	}
+
+	// 尝试使用 Pipeline 接口（Provider 实现了 IPipelineProvider）
+	if pp, ok := c.provider.(IPipelineProvider); ok {
+		return pp.PipelineSet(ctx, rawItems)
+	}
+
+	// 降级：逐个写入
+	for _, raw := range rawItems {
+		if err := c.provider.SetRaw(ctx, raw.Key, raw.Value, raw.Expiration); err != nil {
+			return fmt.Errorf("pipeline set fallback: key '%s': %w", raw.Key, err)
+		}
+	}
+	return nil
+}
+
+// PipelineRemove 批量删除多个键
+// 底层会检查 Provider 是否实现了 IPipelineProvider，是则使用 Pipeline，否则逐个删除
+//
+// 示例：
+//
+//	err := myCache.PipelineRemove(ctx, []cache.CacheKey{
+//	    cache.K("user:1"),
+//	    cache.K("user:2"),
+//	})
+func (c *Cache) PipelineRemove(ctx context.Context, keys []CacheKey) error {
+	if len(keys) == 0 {
+		return nil
+	}
+
+	strKeys := make([]string, len(keys))
+	for i, k := range keys {
+		strKeys[i] = k.String()
+	}
+
+	// 尝试使用 Pipeline 接口
+	if pp, ok := c.provider.(IPipelineProvider); ok {
+		return pp.PipelineRemove(ctx, strKeys)
+	}
+
+	// 降级：逐个删除
+	for _, key := range strKeys {
+		if err := c.provider.Remove(ctx, key); err != nil {
+			return fmt.Errorf("pipeline remove fallback: key '%s': %w", key, err)
+		}
+	}
+	return nil
+}
+
+// PipelineRemoveS 批量删除多个字符串键（PipelineRemove 的字符串键版本）
+func (c *Cache) PipelineRemoveS(ctx context.Context, keys []string) error {
+	cacheKeys := make([]CacheKey, len(keys))
+	for i, k := range keys {
+		cacheKeys[i] = K(k)
+	}
+	return c.PipelineRemove(ctx, cacheKeys)
+}
+
+// ============================================
 // 泛型函数 - 类型安全的缓存操作（Go 1.18+）
 // ============================================
 // 注意：由于 Go 的限制，泛型只能是函数，不能是方法
