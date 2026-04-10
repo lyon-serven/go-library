@@ -51,3 +51,12 @@ func (c *cacheExtWrapper) GetOrSetAsS(ctx context.Context, key string, target in
 func (c *cacheExtWrapper) RefreshS(ctx context.Context, key string) error {
 	return c.Refresh(ctx, K(key))
 }
+
+// PipelineRemoveS 使用字符串键批量删除多个键
+func (c *cacheExtWrapper) PipelineRemoveS(ctx context.Context, keys []string) error {
+	cacheKeys := make([]CacheKey, len(keys))
+	for i, k := range keys {
+		cacheKeys[i] = K(k)
+	}
+	return c.PipelineRemove(ctx, cacheKeys)
+}

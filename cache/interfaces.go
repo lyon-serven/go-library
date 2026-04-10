@@ -118,6 +118,13 @@ type ICache interface {
 
 	// Refresh 刷新缓存项的过期时间
 	Refresh(ctx context.Context, key CacheKey) error
+
+	// PipelineSet 批量写入多个键值对
+	// 底层若 Provider 实现了 IPipelineProvider 则使用 Pipeline，否则逐个写入
+	PipelineSet(ctx context.Context, items []PipelineItem) error
+
+	// PipelineRemove 批量删除多个键
+	PipelineRemove(ctx context.Context, keys []CacheKey) error
 }
 
 // ICacheExt 扩展的缓存接口，支持字符串键的便捷方法
@@ -147,6 +154,9 @@ type ICacheExt interface {
 
 	// RefreshS 使用字符串键刷新缓存项的过期时间
 	RefreshS(ctx context.Context, key string) error
+
+	// PipelineRemoveS 使用字符串键批量删除多个键
+	PipelineRemoveS(ctx context.Context, keys []string) error
 }
 
 // CacheResult 表示异步缓存操作的结果
