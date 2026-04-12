@@ -6,9 +6,9 @@ import (
 	"log"
 	"time"
 
-	"gitee.com/wangsoft/go-library/cache"
-	"gitee.com/wangsoft/go-library/cache/providers"
-	"gitee.com/wangsoft/go-library/cache/serializers"
+	"github.com/lyon-serven/go-library/cache"
+	"github.com/lyon-serven/go-library/cache/providers"
+	"github.com/lyon-serven/go-library/cache/serializers"
 )
 
 // RedisUser 用于演示结构体缓存
@@ -140,26 +140,27 @@ func mainRedis() {
 	}
 
 	// ============================================
-	// 4. GetTypedS —— 泛型获取（推荐）
+	// 4. GetAsS —— 字符串键类型安全获取
 	// ============================================
-	fmt.Println("\n4. GetTypedS —— 泛型获取（推荐）")
+	fmt.Println("\n4. GetAsS —— 字符串键类型安全获取")
 
-	typedUser, err := cache.GetTypedS[RedisUser](ctx, userCache, "user:1001")
-	if err != nil {
-		log.Printf("❌ GetTypedS 失败: %v", err)
+	var typedUser RedisUser
+	if err := userCache.GetAsS(ctx, "user:1001", &typedUser); err != nil {
+		log.Printf("❌ GetAsS 失败: %v", err)
 	} else {
-		fmt.Printf("✅ GetTypedS: ID=%d, Name=%s, 类型=%T\n", typedUser.ID, typedUser.Name, typedUser)
+		fmt.Printf("✅ GetAsS: ID=%d, Name=%s, 类型=%T\n", typedUser.ID, typedUser.Name, typedUser)
 	}
 
 	// ============================================
-	// 5. GetOrSetTypedS —— 缓存穿透保护（最常用）
+	// 5. GetOrSetAsS —— 缓存穿透保护（最常用）
 	// ============================================
-	fmt.Println("\n5. GetOrSetTypedS —— 缓存穿透保护")
+	fmt.Println("\n5. GetOrSetAsS —— 缓存穿透保护")
 
 	// 第一次：缓存未命中，执行工厂函数
 	fmt.Println("   第一次调用（缓存未命中，模拟 DB 查询）:")
-	user2, err := cache.GetOrSetTypedS[RedisUser](ctx, userCache, "user:1002",
-		func() (*RedisUser, error) {
+	var user2 RedisUser
+	err = userCache.GetOrSetAsS(ctx, "user:1002", &user2,
+		func() (interface{}, error) {
 			fmt.Println("   → 从数据库加载 user:1002 ...")
 			time.Sleep(50 * time.Millisecond) // 模拟 DB 耗时
 			return &RedisUser{ID: 1002, Name: "李四", Email: "lisi@example.com", Age: 25, Roles: []string{"user"}}, nil
@@ -167,21 +168,22 @@ func mainRedis() {
 		absExp(5*time.Minute),
 	)
 	if err != nil {
-		log.Printf("❌ GetOrSetTypedS 失败: %v", err)
+		log.Printf("❌ GetOrSetAsS 失败: %v", err)
 	} else {
 		fmt.Printf("✅ 获取: ID=%d, Name=%s\n", user2.ID, user2.Name)
 	}
 
 	// 第二次：缓存命中，工厂函数不会执行
 	fmt.Println("   第二次调用（缓存命中）:")
-	user2Again, err := cache.GetOrSetTypedS[RedisUser](ctx, userCache, "user:1002",
-		func() (*RedisUser, error) {
+	var user2Again RedisUser
+	err = userCache.GetOrSetAsS(ctx, "user:1002", &user2Again,
+		func() (interface{}, error) {
 			fmt.Println("   → ❌ 不应执行此处！")
 			return nil, nil
 		}, nil,
 	)
 	if err != nil {
-		log.Printf("❌ 第二次 GetOrSetTypedS 失败: %v", err)
+		log.Printf("❌ 第二次 GetOrSetAsS 失败: %v", err)
 	} else {
 		fmt.Printf("✅ 从缓存获取: ID=%d, Name=%s\n", user2Again.ID, user2Again.Name)
 	}
@@ -205,8 +207,8 @@ func mainRedis() {
 	fmt.Printf("✅ 批量存储 %d 个商品\n", len(products))
 
 	for _, p := range products {
-		product, err := cache.GetTypedS[RedisProduct](ctx, productCache, fmt.Sprintf("product:%d", p.ID))
-		if err != nil {
+		var product RedisProduct
+		if err := productCache.GetAsS(ctx, fmt.Sprintf("product:%d", p.ID), &product); err != nil {
 			log.Printf("❌ 获取商品 %d 失败: %v", p.ID, err)
 		} else {
 			fmt.Printf("✅ 商品: ID=%d, Name=%s, Price=%.1f, Stock=%d\n",

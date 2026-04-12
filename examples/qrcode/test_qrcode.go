@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitee.com/wangsoft/go-library/util/qrcodeutil"
+	"github.com/lyon-serven/go-library/util/qrcodeutil"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 
 	// 测试简单二维码生成
 	fmt.Println("1. Testing simple QR code generation...")
-	data, err := qrcodeutil.GenerateQRCodeSimple("https://gitee.com/wangsoft/go-library")
+	data, err := qrcodeutil.GenerateQRCodeSimple("https://github.com/lyon-serven/go-library")
 	if err != nil {
 		fmt.Printf("Error generating simple QR code: %v\n", err)
 		return

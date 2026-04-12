@@ -6,9 +6,9 @@ import (
 	"log"
 	"time"
 
-	"gitee.com/wangsoft/go-library/cache"
-	"gitee.com/wangsoft/go-library/cache/providers"
-	"gitee.com/wangsoft/go-library/cache/serializers"
+	"github.com/lyon-serven/go-library/cache"
+	"github.com/lyon-serven/go-library/cache/providers"
+	"github.com/lyon-serven/go-library/cache/serializers"
 )
 
 // User 用户结构体
@@ -106,12 +106,12 @@ func main2() {
 	)
 	fmt.Printf("  ✅ 从缓存获取: %+v\n", orderData2)
 
-	// ========== 方式2: 使用字符串方法 ICacheExt ==========
-	fmt.Println("\n\n【方式2】使用字符串方法 ICacheExt")
+	// ========== 方式2: 使用字符串方法 ==========
+	fmt.Println("\n\n【方式2】使用字符串方法")
 	fmt.Println("-----------------------------------")
 
-	// 将基础缓存包装为支持字符串方法的缓存
-	extCache := cache.NewCacheExt(baseCache)
+	// ICache 已内置字符串键便捷方法，直接使用即可
+	extCache := baseCache
 
 	// 2.1 使用 SetS/GetS 字符串方法
 	fmt.Println("1. 使用 SetS/GetS 字符串方法:")
@@ -211,7 +211,7 @@ func main2() {
 	fmt.Println("\n\n【对比总结】")
 	fmt.Println("-----------------------------------")
 	fmt.Println("✅ 方式1: K()/NK()     - 最推荐，简洁且类型安全")
-	fmt.Println("✅ 方式2: 字符串方法    - 极简风格，适合快速开发")
+	fmt.Println("✅ 方式2: 字符串方法    - 极简风格，适合快速开发（ICache 内置）")
 	fmt.Println("✅ 方式3: 显式CacheKey  - 完整方式，适合复杂场景")
 	fmt.Println("\n选择适合你的方式，开始使用吧！🚀")
 

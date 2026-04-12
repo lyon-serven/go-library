@@ -250,9 +250,9 @@ EOF
 确保所有示例都正确导入:
 ```go
 import (
-    "gitee.com/wangsoft/go-library/cache"
-    "gitee.com/wangsoft/go-library/cache/providers"
-    "gitee.com/wangsoft/go-library/cache/serializers"
+    "github.com/lyon-serven/go-library/cache"
+    "github.com/lyon-serven/go-library/cache/providers"
+    "github.com/lyon-serven/go-library/cache/serializers"
 )
 ```
 

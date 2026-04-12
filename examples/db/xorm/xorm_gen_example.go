@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"gitee.com/wangsoft/go-library/util/db/xorm"
+	"github.com/lyon-serven/go-library/util/db/xorm"
 	xormLog "xorm.io/xorm/log"
 )
 

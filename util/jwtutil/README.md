@@ -17,7 +17,7 @@ JWT (JSON Web Token) 工具包，提供完整的 JWT 令牌生成、验证和管
 ## 安装
 
 ```go
-import "gitee.com/wangsoft/go-library/util/jwtutil"
+import "github.com/lyon-serven/go-library/util/jwtutil"
 ```
 
 ## 快速开始
@@ -30,7 +30,7 @@ package main
 import (
     "fmt"
     "time"
-    "gitee.com/wangsoft/go-library/util/jwtutil"
+    "github.com/lyon-serven/go-library/util/jwtutil"
 )
 
 func main() {

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"gitee.com/wangsoft/go-library/cache"
-	"gitee.com/wangsoft/go-library/cache/providers"
-	"gitee.com/wangsoft/go-library/cache/serializers"
+	"github.com/lyon-serven/go-library/cache"
+	"github.com/lyon-serven/go-library/cache/providers"
+	"github.com/lyon-serven/go-library/cache/serializers"
 )
 
 func main_base() {

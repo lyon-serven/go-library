@@ -25,7 +25,7 @@ package main
 
 import (
     "log"
-    "gitee.com/wangsoft/go-library/util/db/xorm"
+    "github.com/lyon-serven/go-library/util/db/xorm"
 )
 
 func main() {
@@ -93,7 +93,7 @@ config := &xorm.DBConfig{
 package main
 
 import (
-    "gitee.com/wangsoft/go-library/util/db/xorm"
+    "github.com/lyon-serven/go-library/util/db/xorm"
 )
 
 func main() {
@@ -373,7 +373,7 @@ import (
     "log"
     "time"
     
-    "gitee.com/wangsoft/go-library/util/db/xorm"
+    "github.com/lyon-serven/go-library/util/db/xorm"
     xormLog "xorm.io/xorm/log"
 )
 
@@ -588,7 +588,7 @@ import (
     "fmt"
     "log"
     
-    "gitee.com/wangsoft/go-library/util/db/xorm"
+    "github.com/lyon-serven/go-library/util/db/xorm"
 )
 
 func main() {

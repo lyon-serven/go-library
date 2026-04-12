@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"gitee.com/wangsoft/go-library/log"
+	"github.com/lyon-serven/go-library/log"
 	"go.uber.org/zap"
 )
 

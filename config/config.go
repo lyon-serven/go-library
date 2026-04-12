@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	"gitee.com/wangsoft/go-library/util/cryptoutil"
+	"github.com/lyon-serven/go-library/util/cryptoutil"
 
 	"gopkg.in/yaml.v3"
 )

@@ -21,7 +21,7 @@ package main
 
 import (
 	"fmt"
-	"gitee.com/wangsoft/go-library/util/qrcodeutil"
+	"github.com/lyon-serven/go-library/util/qrcodeutil"
 )
 
 func main() {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"gitee.com/wangsoft/go-library/log"
+	"github.com/lyon-serven/go-library/log"
 )
 
 func main_log() {

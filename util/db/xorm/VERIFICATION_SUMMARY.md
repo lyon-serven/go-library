@@ -413,7 +413,7 @@ go clean -cache
 package main
 
 import (
-    "gitee.com/wangsoft/go-library/util/db/xorm"
+    "github.com/lyon-serven/go-library/util/db/xorm"
 )
 
 func main() {
@@ -493,7 +493,7 @@ go mod download
 mkdir test-xorm
 cd test-xorm
 go mod init test
-go get gitee.com/wangsoft/go-library/util/db/xorm
+go get github.com/lyon-serven/go-library/util/db/xorm
 ```
 
 ---
