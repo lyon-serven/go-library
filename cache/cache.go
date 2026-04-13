@@ -12,6 +12,7 @@ type Cache struct {
 	provider       ICacheProvider
 	serializer     ICacheSerializer
 	defaultOptions *CacheOptions
+	defaultTTL     time.Duration // 默认过期时间，0 = 永不过期
 }
 
 // NewCache 创建一个新的缓存实例
@@ -21,6 +22,17 @@ func NewCache(name string, provider ICacheProvider, serializer ICacheSerializer,
 		provider:       provider,
 		serializer:     serializer,
 		defaultOptions: defaultOptions,
+	}
+}
+
+// NewCacheWithTTL 创建带默认过期时间的缓存实例
+func NewCacheWithTTL(name string, provider ICacheProvider, serializer ICacheSerializer, defaultOptions *CacheOptions, defaultTTL time.Duration) *Cache {
+	return &Cache{
+		name:           name,
+		provider:       provider,
+		serializer:     serializer,
+		defaultOptions: defaultOptions,
+		defaultTTL:     defaultTTL,
 	}
 }
 
@@ -89,12 +101,14 @@ func (c *Cache) Set(ctx context.Context, key CacheKey, value interface{}, option
 		return fmt.Errorf("failed to serialize cache value: %w", err)
 	}
 
-	// 计算过期时间
+	// 计算过期时间：单次 options → 实例默认 TTL → 0（永不过期）
 	var expiration time.Duration
 	if options.AbsoluteExpiration != nil {
 		expiration = time.Until(*options.AbsoluteExpiration)
 	} else if options.SlidingExpiration != nil {
 		expiration = *options.SlidingExpiration
+	} else if c.defaultTTL > 0 {
+		expiration = c.defaultTTL
 	}
 
 	return c.provider.SetRaw(ctx, key.String(), data, expiration)

@@ -50,7 +50,7 @@ func mainRedis() {
 		EnableHealthCheck:    true,                   // 开启心跳监测
 		HealthCheckInterval:  30 * time.Second,       // 心跳检测间隔
 		HealthCheckTimeout:   3 * time.Second,        // 单次 Ping 超时
-		LatencyWarnThreshold: 200 * time.Millisecond, // 延迟告警阈值
+		LatencyWarnThreshold: 200 * time.Millisecond, // 延迟告警阈值                 30 * time.Minute,       // 默认 TTL（AbsoluteExpiration 和 SlidingExpiration 均未设置时生效）
 		OnAlert: func(event providers.AlertEvent) {
 			switch event.Level {
 			case providers.AlertLevelWarn:
@@ -62,6 +62,7 @@ func mainRedis() {
 			}
 		},
 	})
+
 	if err != nil {
 		log.Fatal("❌ 连接 Redis 失败:", err)
 	}

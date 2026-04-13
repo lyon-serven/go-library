@@ -58,7 +58,7 @@ func (ci *CacheItem) UpdateSlidingExpiration() {
 	}
 }
 
-// CacheOptions 定义缓存操作的选项
+// CacheOptions 定义缓存操作的选项（单次操作级别）
 type CacheOptions struct {
 	AbsoluteExpiration *time.Time     // 绝对过期时间
 	SlidingExpiration  *time.Duration // 滑动过期时间
@@ -248,6 +248,9 @@ type ICacheManager interface {
 	// Configure 配置特定缓存的自定义提供者和序列化器
 	Configure(cacheName string, providerName string, serializerName string) error
 
+	// ConfigureWithTTL 配置特定缓存，并指定默认过期时间
+	ConfigureWithTTL(cacheName string, providerName string, serializerName string, defaultTTL time.Duration) error
+
 	// Close 关闭所有提供者并释放资源
 	Close() error
 }
@@ -257,7 +260,8 @@ type CacheConfiguration struct {
 	Name           string        // 缓存名称
 	ProviderName   string        // 提供者名称
 	SerializerName string        // 序列化器名称
-	DefaultOptions *CacheOptions // 默认选项
+	DefaultTTL     time.Duration // 默认过期时间（单次操作未指定过期时间时生效，0 = 永不过期）
+	DefaultOptions *CacheOptions // 默认操作选项（优先级等）
 }
 
 // DefaultCacheOptions 返回默认的缓存选项

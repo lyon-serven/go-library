@@ -3,6 +3,7 @@ package cache
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
 // CacheManager 实现 ICacheManager 接口，支持依赖注入
@@ -113,9 +114,21 @@ func (cm *CacheManager) Configure(cacheName string, providerName string, seriali
 		DefaultOptions: DefaultCacheOptions(),
 	}
 
-	// 删除现有的缓存实例，强制使用新配置重新创�?
+	// 删除现有的缓存实例，强制使用新配置重新创建
 	delete(cm.caches, cacheName)
 
+	return nil
+}
+
+// ConfigureWithTTL 配置特定缓存，并指定默认过期时间
+// 当单次操作未指定过期时间时，自动使用此 TTL
+func (cm *CacheManager) ConfigureWithTTL(cacheName string, providerName string, serializerName string, defaultTTL time.Duration) error {
+	if err := cm.Configure(cacheName, providerName, serializerName); err != nil {
+		return err
+	}
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+	cm.configurations[cacheName].DefaultTTL = defaultTTL
 	return nil
 }
 
@@ -162,7 +175,7 @@ func (cm *CacheManager) GetCache(name string) ICache {
 	}
 
 	// 创建缓存实例
-	cache = NewCache(name, provider, serializer, config.DefaultOptions)
+	cache = NewCacheWithTTL(name, provider, serializer, config.DefaultOptions, config.DefaultTTL)
 	cm.caches[name] = cache
 
 	return cache
