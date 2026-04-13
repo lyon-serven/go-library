@@ -83,6 +83,29 @@ func mainRedis() {
 
 	ctx := context.Background()
 
+	// 测试一下批量操作（通过 ICache 高层 API）
+	// 1. PipelineSet —— 自动序列化，底层走 Redis Pipeline
+	fmt.Println("\n测试 PipelineSet 批量写入")
+	cdh := manager.GetCache("sessions")
+	pipeItems := []cache.PipelineItem{
+		{Key: cache.K("batch:key1"), Value: "value1", Expiration: 5 * time.Minute},
+		{Key: cache.K("batch:key2"), Value: "value2", Expiration: 5 * time.Minute},
+		{Key: cache.K("batch:key3"), Value: "value3", Expiration: 5 * time.Minute},
+	}
+	if err := cdh.PipelineSet(ctx, pipeItems); err != nil {
+		log.Printf("❌ PipelineSet 失败: %v", err)
+	} else {
+		fmt.Println("✅ PipelineSet 批量写入成功")
+	}
+
+	// 2. PipelineRemoveS —— 字符串键批量删除，底层走 Redis Pipeline
+	fmt.Println("\n测试 PipelineRemoveS 批量删除")
+	if err := cdh.PipelineRemoveS(ctx, []string{"batch:key1", "batch:key2", "batch:key3"}); err != nil {
+		log.Printf("❌ PipelineRemoveS 失败: %v", err)
+	} else {
+		fmt.Println("✅ PipelineRemoveS 批量删除成功")
+	}
+
 	// manager.GetCache 返回 ICache，泛型函数需要 *Cache，做一次类型断言
 	mustCache := func(name string) *cache.Cache {
 		c, ok := manager.GetCache(name).(*cache.Cache)

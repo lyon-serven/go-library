@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"sync"
 	"time"
+
+	"github.com/lyon-serven/go-library/cache"
 )
 
 // MemoryCacheItem 表示存储在内存缓存中的项
@@ -207,7 +209,7 @@ func (mc *MemoryCache) Clear(ctx context.Context) error {
 }
 
 // PipelineSet 批量写入多个键值对（内存模式无需 Pipeline，逐个写入即可）
-func (mc *MemoryCache) PipelineSet(ctx context.Context, items []PipelineSetItem) error {
+func (mc *MemoryCache) PipelineSet(ctx context.Context, items []cache.PipelineRawItem) error {
 	for _, item := range items {
 		if err := mc.SetRaw(ctx, item.Key, item.Value, item.Expiration); err != nil {
 			return err

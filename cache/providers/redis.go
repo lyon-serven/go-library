@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/lyon-serven/go-library/cache"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -61,13 +62,6 @@ func DefaultRedisOptions() *RedisOptions {
 		HealthCheckTimeout:   3 * time.Second,
 		LatencyWarnThreshold: 200 * time.Millisecond,
 	}
-}
-
-// PipelineSetItem 表示 Pipeline 批量写入的单个条目
-type PipelineSetItem struct {
-	Key        string
-	Value      []byte
-	Expiration time.Duration
 }
 
 // RedisCache 使用 go-redis 实现缓存接口
@@ -160,7 +154,7 @@ func (rc *RedisCache) Close() error {
 // ============================================
 
 // PipelineSet 使用 Pipeline 批量写入，一次网络往返完成所有写入
-func (rc *RedisCache) PipelineSet(ctx context.Context, items []PipelineSetItem) error {
+func (rc *RedisCache) PipelineSet(ctx context.Context, items []cache.PipelineRawItem) error {
 	if len(items) == 0 {
 		return nil
 	}
@@ -318,7 +312,7 @@ func (mrc *MockRedisCache) Clear(_ context.Context) error {
 
 func (mrc *MockRedisCache) Close() error { return nil }
 
-func (mrc *MockRedisCache) PipelineSet(_ context.Context, items []PipelineSetItem) error {
+func (mrc *MockRedisCache) PipelineSet(_ context.Context, items []cache.PipelineRawItem) error {
 	mrc.mu.Lock()
 	defer mrc.mu.Unlock()
 	for _, item := range items {
