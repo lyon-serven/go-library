@@ -34,6 +34,7 @@ type AlertCallback func(event AlertEvent)
 // RedisOptions 定义 Redis 缓存的选项
 type RedisOptions struct {
 	Addresses            []string      // Redis 服务器地址列表
+	Username             string        // ACL 用户名（Redis 6.0+，阿里云/腾讯云等需要）
 	Password             string        // 认证密码
 	DB                   int           // 数据库编号
 	DialTimeout          time.Duration // 连接超时
@@ -84,6 +85,7 @@ func NewRedisCache(options *RedisOptions) (*RedisCache, error) {
 	}
 	client := redis.NewClient(&redis.Options{
 		Addr:         options.Addresses[0],
+		Username:     options.Username,
 		Password:     options.Password,
 		DB:           options.DB,
 		DialTimeout:  options.DialTimeout,

@@ -214,6 +214,45 @@ func (c *Cache) Refresh(ctx context.Context, key CacheKey) error {
 	return c.Set(ctx, key, value, c.defaultOptions)
 }
 
+// ============================================
+// 字符串键便捷方法
+// ============================================
+
+// GetS 使用字符串键从缓存中获取值
+func (c *Cache) GetS(ctx context.Context, key string) (interface{}, error) {
+	return c.Get(ctx, K(key))
+}
+
+// GetAsS 使用字符串键从缓存中获取值并反序列化到指定类型
+func (c *Cache) GetAsS(ctx context.Context, key string, target interface{}) error {
+	return c.GetAs(ctx, K(key), target)
+}
+
+// SetS 使用字符串键将值存储到缓存中
+func (c *Cache) SetS(ctx context.Context, key string, value interface{}, options *CacheOptions) error {
+	return c.Set(ctx, K(key), value, options)
+}
+
+// RemoveS 使用字符串键从缓存中移除值
+func (c *Cache) RemoveS(ctx context.Context, key string) error {
+	return c.Remove(ctx, K(key))
+}
+
+// ExistsS 使用字符串键检查键是否存在
+func (c *Cache) ExistsS(ctx context.Context, key string) (bool, error) {
+	return c.Exists(ctx, K(key))
+}
+
+// GetOrSetS 使用字符串键从缓存获取值，如果不存在则使用工厂函数设置
+func (c *Cache) GetOrSetS(ctx context.Context, key string, factory func() (interface{}, error), options *CacheOptions) (interface{}, error) {
+	return c.GetOrSet(ctx, K(key), factory, options)
+}
+
+// GetOrSetAsS 使用字符串键的类型安全 GetOrSet
+func (c *Cache) GetOrSetAsS(ctx context.Context, key string, target interface{}, factory func() (interface{}, error), options *CacheOptions) error {
+	return c.GetOrSetAs(ctx, K(key), target, factory, options)
+}
+
 // RefreshS 使用字符串键刷新过期时间
 func (c *Cache) RefreshS(ctx context.Context, key string) error {
 	return c.Refresh(ctx, K(key))
@@ -312,91 +351,4 @@ func (c *Cache) PipelineRemoveS(ctx context.Context, keys []string) error {
 		cacheKeys[i] = K(k)
 	}
 	return c.PipelineRemove(ctx, cacheKeys)
-}
-
-// ============================================
-// 泛型函数 - 类型安全的缓存操作（Go 1.18+）
-// ============================================
-// 注意：由于 Go 的限制，泛型只能是函数，不能是方法
-// 但这些函数设计为与 Cache 紧密配合使用
-
-// GetTyped 使用泛型从缓存中获取值，直接返回指定类型
-// 不需要预先创建对象，使用更加直观
-//
-// 使用示例：
-//
-//	user, err := cache.GetTyped[User](ctx, myCache, cache.K("user:1"))
-//	fmt.Printf("用户: %s\n", user.Name)
-func GetTyped[T any](ctx context.Context, c *Cache, key CacheKey) (*T, error) {
-	// 获取原始数据
-	data, err := c.provider.GetRaw(ctx, key.String())
-	if err != nil {
-		return nil, err
-	}
-
-	if data == nil {
-		return nil, fmt.Errorf("key '%s' not found in cache", key.String())
-	}
-
-	// 反序列化到指定类型
-	var result T
-	err = c.serializer.Deserialize(data, &result)
-	if err != nil {
-		return nil, fmt.Errorf("failed to deserialize cache value: %w", err)
-	}
-
-	return &result, nil
-}
-
-// GetTypedS 使用字符串键和泛型从缓存中获取值
-//
-// 使用示例：
-//
-//	user, err := cache.GetTypedS[User](ctx, myCache, "user:1")
-func GetTypedS[T any](ctx context.Context, c *Cache, key string) (*T, error) {
-	return GetTyped[T](ctx, c, K(key))
-}
-
-// GetOrSetTyped 使用泛型的 GetOrSet，直接返回指定类型
-// 如果缓存中没有值，则调用工厂函数生成并缓存
-//
-// 使用示例：
-//
-//	user, err := cache.GetOrSetTyped[User](ctx, myCache, cache.K("user:1"),
-//	    func() (*User, error) {
-//	        return loadUserFromDB(1)
-//	    }, nil)
-func GetOrSetTyped[T any](ctx context.Context, c *Cache, key CacheKey, factory func() (*T, error), options *CacheOptions) (*T, error) {
-	// 尝试从缓存获取
-	result, err := GetTyped[T](ctx, c, key)
-	if err == nil {
-		return result, nil // 缓存命中
-	}
-
-	// 缓存未命中，使用工厂函数生成
-	value, err := factory()
-	if err != nil {
-		return nil, err
-	}
-
-	// 保存到缓存
-	err = c.Set(ctx, key, value, options)
-	if err != nil {
-		// 即使缓存失败也返回值
-		// 可以选择记录日志
-	}
-
-	return value, nil
-}
-
-// GetOrSetTypedS 使用字符串键和泛型的 GetOrSet
-//
-// 使用示例：
-//
-//	user, err := cache.GetOrSetTypedS[User](ctx, myCache, "user:1",
-//	    func() (*User, error) {
-//	        return loadUserFromDB(1)
-//	    }, nil)
-func GetOrSetTypedS[T any](ctx context.Context, c *Cache, key string, factory func() (*T, error), options *CacheOptions) (*T, error) {
-	return GetOrSetTyped[T](ctx, c, K(key), factory, options)
 }

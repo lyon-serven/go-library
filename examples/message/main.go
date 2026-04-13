@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"gitee.com/wangsoft/go-library/message"
+	"github.com/lyon-serven/go-library/message"
 )
 
 func main() {

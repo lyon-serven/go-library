@@ -26,7 +26,7 @@ func NewCacheManager() *CacheManager {
 	}
 }
 
-// RegisterProvider 注册一个缓存提供者
+// RegisterProvider 注册一个缓存提供�?
 func (cm *CacheManager) RegisterProvider(name string, provider ICacheProvider) error {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
@@ -37,7 +37,7 @@ func (cm *CacheManager) RegisterProvider(name string, provider ICacheProvider) e
 
 	cm.providers[name] = provider
 
-	// 如果是第一个提供者，设置为默认提供者
+	// 如果是第一个提供者，设置为默认提供�?
 	if cm.defaultProvider == "" {
 		cm.defaultProvider = name
 	}
@@ -45,7 +45,7 @@ func (cm *CacheManager) RegisterProvider(name string, provider ICacheProvider) e
 	return nil
 }
 
-// RegisterSerializer 注册一个缓存序列化器
+// RegisterSerializer 注册一个缓存序列化�?
 func (cm *CacheManager) RegisterSerializer(name string, serializer ICacheSerializer) error {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
@@ -56,7 +56,7 @@ func (cm *CacheManager) RegisterSerializer(name string, serializer ICacheSeriali
 
 	cm.serializers[name] = serializer
 
-	// 如果是第一个序列化器，设置为默认序列化器
+	// 如果是第一个序列化器，设置为默认序列化�?
 	if cm.defaultSerializer == "" {
 		cm.defaultSerializer = name
 	}
@@ -64,7 +64,7 @@ func (cm *CacheManager) RegisterSerializer(name string, serializer ICacheSeriali
 	return nil
 }
 
-// SetDefaultProvider 设置默认的缓存提供者
+// SetDefaultProvider 设置默认的缓存提供�?
 func (cm *CacheManager) SetDefaultProvider(name string) error {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
@@ -77,7 +77,7 @@ func (cm *CacheManager) SetDefaultProvider(name string) error {
 	return nil
 }
 
-// SetDefaultSerializer 设置默认的缓存序列化器
+// SetDefaultSerializer 设置默认的缓存序列化�?
 func (cm *CacheManager) SetDefaultSerializer(name string) error {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
@@ -95,7 +95,7 @@ func (cm *CacheManager) Configure(cacheName string, providerName string, seriali
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
-	// 验证提供者
+	// 验证提供�?
 	if _, exists := cm.providers[providerName]; !exists {
 		return fmt.Errorf("provider '%s' not found", providerName)
 	}
@@ -113,7 +113,7 @@ func (cm *CacheManager) Configure(cacheName string, providerName string, seriali
 		DefaultOptions: DefaultCacheOptions(),
 	}
 
-	// 删除现有的缓存实例，强制使用新配置重新创建
+	// 删除现有的缓存实例，强制使用新配置重新创�?
 	delete(cm.caches, cacheName)
 
 	return nil
@@ -133,12 +133,12 @@ func (cm *CacheManager) GetCache(name string) ICache {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
-	// 双重检查锁定模式
+	// 双重检查锁定模�?
 	if cache, exists := cm.caches[name]; exists {
 		return cache
 	}
 
-	// 获取配置或使用默认配置
+	// 获取配置或使用默认配�?
 	config := cm.configurations[name]
 	if config == nil {
 		config = &CacheConfiguration{
@@ -175,7 +175,7 @@ func (cm *CacheManager) Close() error {
 
 	var errors []error
 
-	// 关闭所有提供者
+	// 关闭所有提供�?
 	for _, provider := range cm.providers {
 		if err := provider.Close(); err != nil {
 			errors = append(errors, err)

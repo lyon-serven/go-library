@@ -1,4 +1,4 @@
-module gitee.com/wangsoft/go-library
+module github.com/lyon-serven/go-library
 
 go 1.23.9
 
@@ -10,6 +10,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/microsoft/go-mssqldb v1.8.2
+	github.com/redis/go-redis/v9 v9.18.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	go.uber.org/zap v1.27.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -40,7 +41,6 @@ require (
 	github.com/jonboulle/clockwork v0.5.0 // indirect
 	github.com/lestrrat-go/strftime v1.1.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/redis/go-redis/v9 v9.18.0 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect

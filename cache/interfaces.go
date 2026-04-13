@@ -80,6 +80,7 @@ const (
 )
 
 // ICache 定义主要的缓存接口
+// ICache 定义缓存接口，支持 CacheKey 与字符串键两种操作方式
 type ICache interface {
 	// Get 从缓存中获取值（返回 interface{}，JSON 序列化时会是 map[string]interface{}）
 	Get(ctx context.Context, key CacheKey) (interface{}, error)
@@ -125,11 +126,8 @@ type ICache interface {
 
 	// PipelineRemove 批量删除多个键
 	PipelineRemove(ctx context.Context, keys []CacheKey) error
-}
 
-// ICacheExt 扩展的缓存接口，支持字符串键的便捷方法
-type ICacheExt interface {
-	ICache
+	// ---- 字符串键便捷方法 ----
 
 	// GetS 使用字符串键从缓存中获取值
 	GetS(ctx context.Context, key string) (interface{}, error)

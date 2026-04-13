@@ -227,7 +227,7 @@ Write-Host "`n✅ 所有示例测试完成！" -ForegroundColor Green
 ### 问题1: 导入包失败
 
 ```bash
-go: cannot find module providing package gitee.com/wangsoft/go-library
+go: cannot find module providing package github.com/lyon-serven/go-library
 ```
 
 **解决方案：**

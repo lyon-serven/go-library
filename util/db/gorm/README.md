@@ -25,7 +25,7 @@ package main
 
 import (
     "log"
-    "gitee.com/wangsoft/go-library/util/db/gorm"
+    "github.com/lyon-serven/go-library/util/db/gorm"
 )
 
 func main() {
@@ -92,7 +92,7 @@ config := &gorm.DBConfig{
 package main
 
 import (
-    "gitee.com/wangsoft/go-library/util/db/gorm"
+    "github.com/lyon-serven/go-library/util/db/gorm"
 )
 
 func main() {
@@ -297,7 +297,7 @@ import (
     "log"
     "time"
     
-    "gitee.com/wangsoft/go-library/util/db/gorm"
+    "github.com/lyon-serven/go-library/util/db/gorm"
     "gorm.io/gorm/logger"
 )
 
@@ -490,7 +490,7 @@ import (
     "fmt"
     "log"
     
-    "gitee.com/wangsoft/go-library/util/db/gorm"
+    "github.com/lyon-serven/go-library/util/db/gorm"
 )
 
 func main() {

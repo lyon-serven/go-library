@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"gitee.com/wangsoft/go-library/util/jwtutil"
+	"github.com/lyon-serven/go-library/util/jwtutil"
 )
 
 func main() {

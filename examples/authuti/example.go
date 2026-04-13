@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"gitee.com/wangsoft/go-library/util/authutil"
+	"github.com/lyon-serven/go-library/util/authutil"
 )
 
 func main() {

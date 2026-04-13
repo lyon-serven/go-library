@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"gitee.com/wangsoft/go-library/config"
+	"github.com/lyon-serven/go-library/config"
 )
 
 func main() {

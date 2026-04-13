@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"gitee.com/wangsoft/go-library/util/db/gorm"
+	"github.com/lyon-serven/go-library/util/db/gorm"
 	"gorm.io/gorm/logger"
 )
 
@@ -161,8 +161,8 @@ func example5() {
 	fmt.Println("-------------------------------")
 
 	config := &gorm.DBConfig{
-		Type:     gorm.SQLite,
-		FilePath: "./data.db",
+		Type:   gorm.SQLite,
+		DBName: "./data.db",
 	}
 
 	err := gorm.GenerateFromDatabase(config, "./models")
