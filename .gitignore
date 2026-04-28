@@ -53,3 +53,5 @@ coverage.html
 config.local.yaml
 
 .kiro/
+
+.claude/
